@@ -13,6 +13,9 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.ftdi.j2xx.D2xxManager;
+import com.ftdi.j2xx.FT_Device;
+
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -31,11 +34,29 @@ public class MainActivity extends ActionBarActivity {
 		IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
 		registerReceiver(mUsbReceiver, filter);
 
+		UsbDevice piksidev = null;
 		HashMap<String, UsbDevice> deviceList = mUsbManager.getDeviceList();
 		Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
 		while(deviceIterator.hasNext()){
 			UsbDevice device = deviceIterator.next();
 			Log.d(TAG, device.getProductName());
+			if ((device.getVendorId() == 0x403) && (device.getProductId() == 0x6014))
+				piksidev = device;
+		}
+		if (piksidev == null) {
+			Log.d(TAG, "No Piksi connected!");
+		}
+		try {
+			D2xxManager d2xx = D2xxManager.getInstance(this);
+			FT_Device piksi = d2xx.openByUsbDevice(this, piksidev);
+			Log.d(TAG, "Got a FTDI device");
+			piksi.setBaudRate(1000000);
+			byte foo[] = new byte[100];
+			piksi.read(foo, 100);
+            Log.d(TAG, foo.toString());
+			
+		} catch (D2xxManager.D2xxException e) {
+			Log.d(TAG, e.toString());
 		}
 	}
 
