@@ -63,6 +63,10 @@ public class MainActivity extends ActionBarActivity {
 				throw myException;
 			}
 
+			byte foo[] = new byte[100];
+			int i = piksi.read(foo, 100, 5000);
+			Log.d(TAG, "" + i);
+			Log.d(TAG, HexDump.dumpHexString(foo));
 		} catch (D2xxManager.D2xxException e) {
 			Log.d(TAG, e.toString());
 		}
