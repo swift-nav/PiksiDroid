@@ -19,7 +19,6 @@ import com.ftdi.j2xx.FT_Device;
 import java.util.HashMap;
 import java.util.Iterator;
 
-
 public class MainActivity extends ActionBarActivity {
 	public String TAG = "PiksiDroid";
 	private static final String ACTION_USB_PERMISSION =
@@ -39,8 +38,8 @@ public class MainActivity extends ActionBarActivity {
 		Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
 		while(deviceIterator.hasNext()){
 			UsbDevice device = deviceIterator.next();
-			Log.d(TAG, device.getProductName());
 			if ((device.getVendorId() == 0x403) && (device.getProductId() == 0x6014))
+				mUsbManager.requestPermission(device, mPermissionIntent);
 				piksidev = device;
 		}
 		if (piksidev == null) {
@@ -48,13 +47,22 @@ public class MainActivity extends ActionBarActivity {
 		}
 		try {
 			D2xxManager d2xx = D2xxManager.getInstance(this);
-			FT_Device piksi = d2xx.openByUsbDevice(this, piksidev);
-			Log.d(TAG, "Got a FTDI device");
-			piksi.setBaudRate(1000000);
-			byte foo[] = new byte[100];
-			piksi.read(foo, 100);
-            Log.d(TAG, foo.toString());
-			
+
+			int devCount = 0;
+			devCount = d2xx.createDeviceInfoList(this);
+			D2xxManager.FtDeviceInfoListNode[] devList = new D2xxManager.FtDeviceInfoListNode[devCount];
+			d2xx.getDeviceInfoList(devCount, devList);
+			FT_Device piksi = d2xx.openByIndex(this, 0);
+
+			if (piksi == null) {
+				D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot open device!");
+				throw myException;
+			}
+			if (!piksi.setBaudRate(Utils.baudrate)) {
+				D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot set baudrate!!");
+				throw myException;
+			}
+
 		} catch (D2xxManager.D2xxException e) {
 			Log.d(TAG, e.toString());
 		}
