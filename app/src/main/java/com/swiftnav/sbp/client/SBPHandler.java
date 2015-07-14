@@ -42,8 +42,8 @@ public class SBPHandler {
         byte[] preamble;
         do {
             preamble = driver.read(1);
-            if ((preamble == null)) {
-                return null;
+            if (preamble == null) {
+                throw new IOException("SBPDriver read() returned null!");
             }
         } while (preamble[0] != PREAMBLE);
         byte[] bheader = driver.read(Header.SIZE);
@@ -95,6 +95,9 @@ public class SBPHandler {
                     Log.e(TAG, "IOException in listener thread!");
                     break;
                 }
+
+                if (msg == null)
+                    continue;
 
                 for (Callback cb : callbacks) {
                     cb.dispatch(msg);
