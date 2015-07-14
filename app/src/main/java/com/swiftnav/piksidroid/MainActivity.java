@@ -21,50 +21,72 @@ import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TabHost;
 import android.widget.Toast;
 
-import com.ftdi.j2xx.D2xxManager;
-import com.ftdi.j2xx.FT_Device;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.swiftnav.sbp.client.SBPCallback;
+import com.swiftnav.sbp.client.SBPDriver;
+import com.swiftnav.sbp.client.SBPHandler;
+import com.swiftnav.sbp.msg.MsgPrint;
+import com.swiftnav.sbp.msg.SBPMessage;
 
+import java.io.OutputStream;
+import java.net.Socket;
 import java.util.HashMap;
-import java.util.Iterator;
 
+public class MainActivity extends FragmentActivity implements OnMapReadyCallback, SBPDriver {
+	String TAG = "PiksiDroid";
+	String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
 
-public class MainActivity extends AppCompatActivity {
-	public String TAG = "PiksiDroid";
-	private static final String ACTION_USB_PERMISSION =
-			"com.android.example.USB_PERMISSION";
-	private FT_Device piksi = null;
-	boolean mThreadIsStopped = true;
-	static final int READBUF_SIZE  = 256;
-	byte[] rbuf  = new byte[READBUF_SIZE];
-	int mReadSize=0;
-	Handler mHandler = new Handler();
-	Thread mThread;
+	static final int READBUF_SIZE = 256;
+	byte[] rbuf = new byte[READBUF_SIZE];
+
+	SBPHandler handler = null;
+
+	Socket piksiConsole;
+	OutputStream output;
+
+	PiksiDriver piksi;
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
 		UsbManager mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
 		PendingIntent mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
 		IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
 		registerReceiver(mUsbReceiver, filter);
+
 		HashMap<String, UsbDevice> deviceList = mUsbManager.getDeviceList();
-		Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
-		while(deviceIterator.hasNext()){
-			UsbDevice device = deviceIterator.next();
+
+		for (UsbDevice device : deviceList.values()) {
 			if ((device.getVendorId() == 0x403) && (device.getProductId() == 0x6014))
 				mUsbManager.requestPermission(device, mPermissionIntent);
 		}
 
 		this.setupUI();
+	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		unregisterReceiver(mUsbReceiver);
 	}
 
 	View.OnClickListener read_listen = new View.OnClickListener() {
@@ -74,7 +96,13 @@ public class MainActivity extends AppCompatActivity {
 				showToast("Piksi not connected!");
 				return;
 			}
-			new Thread(mLoop).start();
+		}
+	};
+
+	View.OnClickListener connect_listen = new View.OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			new Thread(socketLoop).start();
 		}
 	};
 
@@ -87,37 +115,24 @@ public class MainActivity extends AppCompatActivity {
 					UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 
 					if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-						if(device != null){
-							try {
-								D2xxManager d2xx = D2xxManager.getInstance(context);
-								int devCount = 0;
-								devCount = d2xx.createDeviceInfoList(context);
-								D2xxManager.FtDeviceInfoListNode[] devList = new D2xxManager.FtDeviceInfoListNode[devCount];
-								d2xx.getDeviceInfoList(devCount, devList);
-								piksi = d2xx.openByIndex(context, 0);
-								if (piksi == null) {
-									D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot open device!");
-									throw myException;
+						if (device != null) {
+							piksi = new PiksiDriver(context);
+							handler = new SBPHandler(piksi);
+							handler.add_callback(SBPMessage.SBP_MSG_PRINT, new SBPCallback() {
+								@Override
+								public void receiveCallback(SBPMessage msg) {
+									MsgPrint msgPrint = null;
+									try {
+										msgPrint = new MsgPrint(msg);
+									} catch (Exception e) {
+										e.printStackTrace();
+									}
+									Log.d(TAG, "MsgPrint: " + msgPrint.text);
 								}
-								if (!piksi.setDataCharacteristics(D2xxManager.FT_DATA_BITS_8, D2xxManager.FT_STOP_BITS_1, D2xxManager.FT_PARITY_NONE)) {
-									D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot set 8,1,N!");
-									throw myException;
-								}
-								if (!piksi.setBaudRate(Utils.baudrate)) {
-									D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot set baudrate!!");
-									throw myException;
-								}
-								piksi.stopInTask();
-								piksi.purge((byte) (D2xxManager.FT_PURGE_TX | D2xxManager.FT_PURGE_RX));
-								piksi.restartInTask();
-								((Button)findViewById(R.id.read_button)).setEnabled(true);
-
-							} catch (D2xxManager.D2xxException e) {
-								Log.d(TAG, e.toString());
-							}
+							});
+							handler.start();
 						}
-					}
-					else {
+					} else {
 						Log.d(TAG, "permission denied for device " + device);
 					}
 				}
@@ -129,49 +144,39 @@ public class MainActivity extends AppCompatActivity {
 		runOnUiThread(new Runnable() {
 						  public void run() {
 							  Context context = getApplicationContext();
-							  CharSequence text = message;
 							  int duration = Toast.LENGTH_SHORT;
-							  Toast toast = Toast.makeText(context, text, duration);
+							  Toast toast = Toast.makeText(context, message, duration);
 							  toast.show();
 						  }
 					  }
 		);
 	}
 
-	private Runnable mLoop = new Runnable() {
+	private Runnable socketLoop = new Runnable() {
 		@Override
 		public void run() {
-			int i;
-			int readSize;
-			mThreadIsStopped = false;
-			while(true) {
-				if(mThreadIsStopped) {
-					break;
-				}
-				synchronized (piksi) {
-					readSize = piksi.getQueueStatus();
-					if(readSize > 0) {
-						mReadSize = readSize;
-						if(mReadSize > READBUF_SIZE) {
-							mReadSize = READBUF_SIZE;
-						}
-						piksi.read(rbuf,mReadSize);
-
-						mHandler.post(new Runnable() {
-							@Override
-							public void run() {
-								Log.d(TAG, HexDump.dumpHexString(rbuf));
-							}
-						});
-
-					}
-				}
+			int serverPort;
+			String serverIP = ((EditText)findViewById(R.id.serverIP)).getText().toString().trim();
+			try {
+				serverPort = Integer.parseInt(((EditText)findViewById(R.id.serverPort)).getText().toString().trim());
+			}
+			catch (NumberFormatException e) {
+				showToast("Please insert a good server port!");
+				return;
+			}
+			try {
+				piksiConsole = new Socket(serverIP, serverPort);
+				output = piksiConsole.getOutputStream();
+				showToast("Connected to " + serverIP);
+			} catch (Exception e) {
+				Log.d(TAG, e.toString());
+				showToast("Could not connect to " + serverIP);
 			}
 		}
 	};
 
 	private void setupUI() {
-		TabHost tabHost = (TabHost)findViewById(R.id.tabHost);
+		TabHost tabHost = (TabHost) findViewById(R.id.tabHost);
 		tabHost.setup();
 
 
@@ -195,8 +200,32 @@ public class MainActivity extends AppCompatActivity {
 		tabSpec.setIndicator("Observation");
 		tabHost.addTab(tabSpec);
 
-		Button read_button = (Button)findViewById(R.id.read_button);
+		Button read_button = (Button) findViewById(R.id.read_button);
 		read_button.setEnabled(false);
 		read_button.setOnClickListener(read_listen);
+
+		Button connect_button = (Button) findViewById(R.id.serverConnect);
+		connect_button.setOnClickListener(connect_listen);
+
+		MapFragment mapFragment = (MapFragment) getFragmentManager()
+				.findFragmentById(R.id.map_fragment);
+		mapFragment.getMapAsync(this);
+	}
+
+	@Override
+	public void onMapReady(GoogleMap googleMap) {
+		googleMap.addMarker(new MarkerOptions()
+				.position(new LatLng(0, 0))
+				.title("Marker"));
+	}
+
+	@Override
+	public byte[] read(int len) {
+		return new byte[0];
+	}
+
+	@Override
+	public void write(byte[] data) {
+
 	}
 }

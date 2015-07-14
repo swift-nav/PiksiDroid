@@ -2,7 +2,6 @@ package com.swiftnav.sbp.client;
 
 import android.util.Log;
 
-import com.swiftnav.piksidroid.HexDump;
 import com.swiftnav.sbp.msg.SBPMessage;
 
 import java.io.IOException;
@@ -40,11 +39,13 @@ public class SBPHandler {
     }
 
     public SBPMessage receive() throws IOException {
-        byte[] preamble = driver.read(1);
-        if ((preamble == null) || (preamble[0] != PREAMBLE)) {
-            return null;
-        }
-
+        byte[] preamble;
+        do {
+            preamble = driver.read(1);
+            if ((preamble == null)) {
+                return null;
+            }
+        } while (preamble[0] != PREAMBLE);
         byte[] bheader = driver.read(Header.SIZE);
         int calccrc = CRC16.crc16(bheader);
         Header header = new Header(bheader);
@@ -119,7 +120,6 @@ public class SBPHandler {
             type = bb.getShort() & 0xffff;
             sender = bb.getShort() & 0xffff;
             len = bb.get() & 0xff;
-            Log.d(TAG, String.format("%04X %04X %02X", type, sender, len));
         }
 
         Header(int sender_, int type_, int len_) {
