@@ -38,21 +38,23 @@ public class PiksiDriver implements SBPDriver {
 			D2xxManager.FtDeviceInfoListNode[] devList = new D2xxManager.FtDeviceInfoListNode[devCount];
 			d2xx.getDeviceInfoList(devCount, devList);
 			piksi = d2xx.openByIndex(context, 0);
-			if (piksi == null) {
-				D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot open device!");
-				throw myException;
+			synchronized (piksi) {
+				if (piksi == null) {
+					D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot open device!");
+					throw myException;
+				}
+				if (!piksi.setDataCharacteristics(D2xxManager.FT_DATA_BITS_8, D2xxManager.FT_STOP_BITS_1, D2xxManager.FT_PARITY_NONE)) {
+					D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot set 8,1,N!");
+					throw myException;
+				}
+				if (!piksi.setBaudRate(Utils.baudrate)) {
+					D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot set baudrate!!");
+					throw myException;
+				}
+				piksi.stopInTask();
+				piksi.purge((byte) (D2xxManager.FT_PURGE_TX | D2xxManager.FT_PURGE_RX));
+				piksi.restartInTask();
 			}
-			if (!piksi.setDataCharacteristics(D2xxManager.FT_DATA_BITS_8, D2xxManager.FT_STOP_BITS_1, D2xxManager.FT_PARITY_NONE)) {
-				D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot set 8,1,N!");
-				throw myException;
-			}
-			if (!piksi.setBaudRate(Utils.baudrate)) {
-				D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot set baudrate!!");
-				throw myException;
-			}
-			piksi.stopInTask();
-			piksi.purge((byte) (D2xxManager.FT_PURGE_TX | D2xxManager.FT_PURGE_RX));
-			piksi.restartInTask();
 
 		} catch (D2xxManager.D2xxException e) {
 			Log.d(TAG, e.toString());
@@ -62,7 +64,9 @@ public class PiksiDriver implements SBPDriver {
 	@Override
 	public byte[] read(int len) throws IOException {
 		byte[] data = new byte[len];
-		piksi.read(data, len);
+		synchronized (piksi) {
+			piksi.read(data, len);
+		}
 		return data;
 	}
 
