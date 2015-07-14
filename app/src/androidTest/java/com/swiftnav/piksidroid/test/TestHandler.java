@@ -1,5 +1,7 @@
 package com.swiftnav.piksidroid.test;
 
+import android.util.Log;
+
 import com.swiftnav.sbp.client.SBPDriver;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.msg.MsgPrint;
@@ -7,12 +9,17 @@ import com.swiftnav.sbp.msg.SBPMessage;
 
 import junit.framework.TestCase;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOError;
+import java.io.IOException;
 import java.util.Arrays;
 
 /**
  * Created by gareth on 7/13/15.
  */
 public class TestHandler extends TestCase {
+    static final String TAG = "SBPTestHandler";
+
     public void testReceive() {
         int[] bini = {0x55, 0x15, 0x00, 0xab, 0x03, 0x0d, 0xab, 0xaa,
                 0x86, 0x41, 0x00, 0xc0, 0x79, 0x44, 0xd8, 0x7c, 0x0c, 0xc5, 0x11, 0x2e, 0x45};
@@ -31,6 +38,21 @@ public class TestHandler extends TestCase {
 
         MsgPrint msgPrint = new MsgPrint("Hello World!");
 
+        try {
+            handler.send(msgPrint);
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail("Exception in handler.send()");
+        }
+        try {
+            SBPMessage recvmsg = handler.receive();
+            assertTrue(recvmsg != null);
+            MsgPrint recvPrint = new MsgPrint(recvmsg);
+            assertEquals(recvPrint.text, "Hello World!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Exception in handler.receive()");
+        }
     }
 
     class TestDriver implements SBPDriver {
@@ -49,8 +71,11 @@ public class TestHandler extends TestCase {
         }
 
         @Override
-        public void write(byte[] data) {
-
+        public void write(byte[] data_) throws IOException {
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            stream.write(data);
+            stream.write(data_);
+            data = stream.toByteArray();
         }
     }
 }
