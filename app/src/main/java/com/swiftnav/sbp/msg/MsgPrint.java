@@ -1,7 +1,5 @@
 package com.swiftnav.sbp.msg;
 
-import java.io.UnsupportedEncodingException;
-
 /**
  * Created by gareth on 7/14/15.
  */

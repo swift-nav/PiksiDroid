@@ -65,6 +65,8 @@ public class PiksiDriver implements SBPDriver {
 	public byte[] read(int len) throws IOException {
 		byte[] data = new byte[len];
 		synchronized (piksi) {
+			if (!piksi.isOpen())
+				throw new IOException("Piksi device is closed!");
 			piksi.read(data, len);
 		}
 		return data;

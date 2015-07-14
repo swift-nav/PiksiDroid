@@ -44,7 +44,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
 
-public class MainActivity extends FragmentActivity implements OnMapReadyCallback, SBPDriver {
+public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
 	String TAG = "PiksiDroid";
 	String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
 
@@ -72,6 +72,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		PendingIntent mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
 		IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
 		registerReceiver(mUsbReceiver, filter);
+
+		filter = new IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED);
+		registerReceiver(mUsbReceiverDisconnect, filter);
 
 		HashMap<String, UsbDevice> deviceList = mUsbManager.getDeviceList();
 
@@ -130,11 +133,26 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 									Log.d(TAG, "MsgPrint: " + msgPrint.text);
 								}
 							});
-							handler.start();
+							Log.d(TAG, "All ready to go...");
+							//handler.start();
 						}
 					} else {
 						Log.d(TAG, "permission denied for device " + device);
 					}
+				}
+			}
+		}
+	};
+
+	BroadcastReceiver mUsbReceiverDisconnect = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+
+			if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
+				UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+				if (device != null) {
+					// call your method that cleans up and closes communication with the device
+					Log.e(TAG, "Device disconnected!");
 				}
 			}
 		}
@@ -219,13 +237,4 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 				.title("Marker"));
 	}
 
-	@Override
-	public byte[] read(int len) {
-		return new byte[0];
-	}
-
-	@Override
-	public void write(byte[] data) {
-
-	}
 }
