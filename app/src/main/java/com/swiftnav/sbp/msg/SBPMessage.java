@@ -5,7 +5,7 @@ package com.swiftnav.sbp.msg;
  */
 public class SBPMessage {
     /* Message IDs */
-    static final int SBP_MSG_PRINT = 0x0010;
+    public static final int SBP_MSG_PRINT = 0x0010;
 
     public final int sender;
     public final int type;

@@ -2,6 +2,8 @@ package com.swiftnav.piksidroid.test;
 
 import android.util.Log;
 
+import com.swiftnav.piksidroid.HexDump;
+import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPDriver;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.msg.MsgPrint;
@@ -19,45 +21,51 @@ import java.util.Arrays;
  */
 public class TestHandler extends TestCase {
     static final String TAG = "SBPTestHandler";
+    static final String TEST_TEXT = "Hello World!";
+    boolean gotPrint;
+    String printText;
 
     public void testReceive() {
-        int[] bini = {0x55, 0x15, 0x00, 0xab, 0x03, 0x0d, 0xab, 0xaa,
-                0x86, 0x41, 0x00, 0xc0, 0x79, 0x44, 0xd8, 0x7c, 0x0c, 0xc5, 0x11, 0x2e, 0x45};
-        byte[] bin = new byte[bini.length];
-        /* It can't really be this bad */
-        for (int i = 0; i < bini.length; i++) {
-            bin[i] = (byte) (bini[i] & 0xff);
-        }
+        SBPHandler handler = new SBPHandler(new TestDriver());
+        handler.add_callback(SBPMessage.SBP_MSG_PRINT, new SBPCallback() {
+            @Override
+            public void receiveCallback(SBPMessage msg) {
+                MsgPrint msgPrint = null;
+                try {
+                    msgPrint = new MsgPrint(msg);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                assertTrue(msgPrint != null);
+                Log.d(TAG, "MsgPrint: " + msgPrint.text);
+                printText = msgPrint.text;
+                gotPrint = true;
+            }
+        });
 
-        SBPHandler handler = new SBPHandler(new TestDriver(bin));
-        SBPMessage msg = handler.receive();
-        assertEquals(msg.sender, 939);
-        assertEquals(msg.type, 0x15);
-        byte[] payload = msg.getPayload();
-        assertEquals(payload.length, 13);
-
-        MsgPrint msgPrint = new MsgPrint("Hello World!");
+        MsgPrint sendPrint = new MsgPrint(TEST_TEXT);
 
         try {
-            handler.send(msgPrint);
+            handler.send(sendPrint);
         } catch (IOException e) {
             e.printStackTrace();
             fail("Exception in handler.send()");
         }
-        try {
-            SBPMessage recvmsg = handler.receive();
-            assertTrue(recvmsg != null);
-            MsgPrint recvPrint = new MsgPrint(recvmsg);
-            assertEquals(recvPrint.text, "Hello World!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("Exception in handler.receive()");
-        }
+
+        handler.start();
+        while(!gotPrint);
+        handler.stop();
+
+        assertEquals(printText, TEST_TEXT);
     }
 
     class TestDriver implements SBPDriver {
         private byte[] data;
         private int pos = 0;
+
+        TestDriver() {
+            data = new byte[0];
+        }
 
         TestDriver(byte[] dataToRead) {
             data = dataToRead;
@@ -65,6 +73,11 @@ public class TestHandler extends TestCase {
 
         @Override
         public byte[] read(int len) {
+            if (pos + len > data.length) {
+                Log.d(TAG, "Read past end of buffer!");
+                return null;
+            }
+
             byte[] ret = Arrays.copyOfRange(data, pos, pos+len);
             pos += len;
             return ret;
