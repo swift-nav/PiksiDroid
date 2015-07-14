@@ -20,6 +20,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -35,7 +36,6 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.swiftnav.sbp.client.SBPCallback;
-import com.swiftnav.sbp.client.SBPDriver;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.msg.MsgPrint;
 import com.swiftnav.sbp.msg.SBPMessage;
@@ -91,6 +91,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 	protected void onDestroy() {
 		super.onDestroy();
 		unregisterReceiver(mUsbReceiver);
+		unregisterReceiver(mUsbReceiverDisconnect);
 	}
 
 	View.OnClickListener read_listen = new View.OnClickListener() {
@@ -110,6 +111,40 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		}
 	};
 
+	public class piksiTask extends AsyncTask<Void, Void, Long> {
+		private Context mContext;
+		public piksiTask (Context context){
+			mContext = context;
+		}
+
+		@Override
+		protected Long doInBackground(Void... params) {
+			try {
+				piksi = new PiksiDriver(mContext);
+			} catch (IOException e) {
+				Log.d(TAG, e.toString());
+				e.printStackTrace();
+				return null;
+			}
+			handler = new SBPHandler(piksi);
+			handler.add_callback(SBPMessage.SBP_MSG_PRINT, new SBPCallback() {
+				@Override
+				public void receiveCallback(SBPMessage msg) {
+					MsgPrint msgPrint = null;
+					try {
+						msgPrint = new MsgPrint(msg);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					Log.d(TAG, "MsgPrint: " + msgPrint.text);
+				}
+			});
+			Log.d(TAG, "All ready to go...");
+			handler.start();
+			return null;
+		}
+	}
+
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 
 		public void onReceive(Context context, Intent intent) {
@@ -117,32 +152,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 			if (ACTION_USB_PERMISSION.equals(action)) {
 				synchronized (this) {
 					UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-
 					if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
 						if (device != null) {
-
-							try {
-								piksi = new PiksiDriver(context);
-							} catch (IOException e) {
-								e.printStackTrace();
-								Log.e(TAG, "IOException in PikdiDriver constructor!");
-								return;
-							}
-							handler = new SBPHandler(piksi);
-							handler.add_callback(SBPMessage.SBP_MSG_PRINT, new SBPCallback() {
-								@Override
-								public void receiveCallback(SBPMessage msg) {
-									MsgPrint msgPrint = null;
-									try {
-										msgPrint = new MsgPrint(msg);
-									} catch (Exception e) {
-										e.printStackTrace();
-									}
-									Log.d(TAG, "MsgPrint: " + msgPrint.text);
-								}
-							});
-							Log.d(TAG, "All ready to go...");
-							handler.start();
+							new piksiTask(context).execute();
 						}
 					} else {
 						Log.d(TAG, "permission denied for device " + device);
@@ -159,10 +171,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 			if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
 				UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 				if (device != null) {
-					// call your method that cleans up and closes communication with the device
 					Log.e(TAG, "Device disconnected!");
 					handler.stop();
 					piksi.close();
+					Log.d(TAG, "Closed Piksi from outside driver!");
 				}
 			}
 		}
