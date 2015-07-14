@@ -29,6 +29,9 @@ public class SBPHandler {
     }
 
     public void stop() {
+        if (receiveThread == null)
+            return;
+        
         receiveThread.finish();
         try {
             receiveThread.join(1000);

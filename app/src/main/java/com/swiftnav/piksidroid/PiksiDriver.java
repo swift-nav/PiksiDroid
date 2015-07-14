@@ -61,6 +61,12 @@ public class PiksiDriver implements SBPDriver {
 		}
 	}
 
+	public void close() {
+		synchronized (piksi) {
+			piksi.close();
+		}
+	}
+
 	@Override
 	public byte[] read(int len) throws IOException {
 		byte[] data = new byte[len];

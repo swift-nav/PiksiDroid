@@ -153,6 +153,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 				if (device != null) {
 					// call your method that cleans up and closes communication with the device
 					Log.e(TAG, "Device disconnected!");
+					handler.stop();
+					piksi.close();
 				}
 			}
 		}
