@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -28,6 +29,13 @@ public class MainActivity extends ActionBarActivity {
 	private static final String ACTION_USB_PERMISSION =
 			"com.android.example.USB_PERMISSION";
 	private FT_Device piksi = null;
+	boolean mThreadIsStopped = true;
+	static final int READBUF_SIZE  = 256;
+	byte[] rbuf  = new byte[READBUF_SIZE];
+	char[] rchar = new char[READBUF_SIZE];
+	int mReadSize=0;
+	Handler mHandler = new Handler();
+	Thread mThread;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -57,14 +65,7 @@ public class MainActivity extends ActionBarActivity {
 				showToast("Piksi not connected!");
 				return;
 			}
-			int available = piksi.getQueueStatus();
-			if (available <= 0) {
-				return;
-			}
-			byte[] data = new byte[available];
-			int rc = piksi.read(data, available);
-			Log.d(TAG, "" + rc);
-			Log.d(TAG, HexDump.dumpHexString(data, 0, available));
+			new Thread(mLoop).start();
 		}
 	};
 
@@ -120,8 +121,8 @@ public class MainActivity extends ActionBarActivity {
 									throw myException;
 								}
 								piksi.stopInTask();
+								piksi.purge((byte) (D2xxManager.FT_PURGE_TX | D2xxManager.FT_PURGE_RX));
 								piksi.restartInTask();
-
 								((Button)findViewById(R.id.read_button)).setEnabled(true);
 
 							} catch (D2xxManager.D2xxException e) {
@@ -149,4 +150,36 @@ public class MainActivity extends ActionBarActivity {
 					  }
 		);
 	}
+
+	private Runnable mLoop = new Runnable() {
+		@Override
+		public void run() {
+			int i;
+			int readSize;
+			mThreadIsStopped = false;
+			while(true) {
+				if(mThreadIsStopped) {
+					break;
+				}
+				synchronized (piksi) {
+					readSize = piksi.getQueueStatus();
+					if(readSize>0) {
+						mReadSize = readSize;
+						if(mReadSize > READBUF_SIZE) {
+							mReadSize = READBUF_SIZE;
+						}
+						piksi.read(rbuf,mReadSize);
+
+						mHandler.post(new Runnable() {
+							@Override
+							public void run() {
+								Log.d(TAG, HexDump.dumpHexString(rbuf));
+							}
+						});
+
+					}
+				}
+			}
+		}
+	};
 }
