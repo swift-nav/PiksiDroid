@@ -1,3 +1,16 @@
+/*
+ * # Copyright (C) 2011-2015 Swift Navigation Inc.
+ * # Contact: Vlad Ungureanu <vvu@vdev.ro>
+ * #
+ * # This source is subject to the license found in the file 'LICENSE' which must
+ * # be be distributed together with this source. All other rights reserved.
+ * #
+ * # THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+ * # EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+ * # WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ */
+
 package com.swiftnav.piksidroid;
 
 import android.app.PendingIntent;
@@ -9,12 +22,11 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TabHost;
 import android.widget.Toast;
 
 import com.ftdi.j2xx.D2xxManager;
@@ -24,7 +36,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends AppCompatActivity {
 	public String TAG = "PiksiDroid";
 	private static final String ACTION_USB_PERMISSION =
 			"com.android.example.USB_PERMISSION";
@@ -32,7 +44,6 @@ public class MainActivity extends ActionBarActivity {
 	boolean mThreadIsStopped = true;
 	static final int READBUF_SIZE  = 256;
 	byte[] rbuf  = new byte[READBUF_SIZE];
-	char[] rchar = new char[READBUF_SIZE];
 	int mReadSize=0;
 	Handler mHandler = new Handler();
 	Thread mThread;
@@ -53,9 +64,7 @@ public class MainActivity extends ActionBarActivity {
 				mUsbManager.requestPermission(device, mPermissionIntent);
 		}
 
-		Button read_button = (Button)findViewById(R.id.read_button);
-		read_button.setEnabled(false);
-		read_button.setOnClickListener(read_listen);
+		this.setupUI();
 	}
 
 	View.OnClickListener read_listen = new View.OnClickListener() {
@@ -69,35 +78,13 @@ public class MainActivity extends ActionBarActivity {
 		}
 	};
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.menu_main, menu);
-		return true;
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
-		int id = item.getItemId();
-
-		//noinspection SimplifiableIfStatement
-		if (id == R.id.action_settings) {
-			return true;
-		}
-
-		return super.onOptionsItemSelected(item);
-	}
-
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
 			if (ACTION_USB_PERMISSION.equals(action)) {
 				synchronized (this) {
-					UsbDevice device = (UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+					UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 
 					if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
 						if(device != null){
@@ -163,7 +150,7 @@ public class MainActivity extends ActionBarActivity {
 				}
 				synchronized (piksi) {
 					readSize = piksi.getQueueStatus();
-					if(readSize>0) {
+					if(readSize > 0) {
 						mReadSize = readSize;
 						if(mReadSize > READBUF_SIZE) {
 							mReadSize = READBUF_SIZE;
@@ -182,4 +169,34 @@ public class MainActivity extends ActionBarActivity {
 			}
 		}
 	};
+
+	private void setupUI() {
+		TabHost tabHost = (TabHost)findViewById(R.id.tabHost);
+		tabHost.setup();
+
+
+		TabHost.TabSpec tabSpec = tabHost.newTabSpec("Piksi");
+		tabSpec.setContent(R.id.piksi);
+		tabSpec.setIndicator("Piksi");
+		tabHost.addTab(tabSpec);
+
+		tabSpec = tabHost.newTabSpec("Tracking");
+		tabSpec.setContent(R.id.tracking);
+		tabSpec.setIndicator("Tracking");
+		tabHost.addTab(tabSpec);
+
+		tabSpec = tabHost.newTabSpec("Map");
+		tabSpec.setContent(R.id.map);
+		tabSpec.setIndicator("Map");
+		tabHost.addTab(tabSpec);
+
+		tabSpec = tabHost.newTabSpec("Observation");
+		tabSpec.setContent(R.id.observation);
+		tabSpec.setIndicator("Observation");
+		tabHost.addTab(tabSpec);
+
+		Button read_button = (Button)findViewById(R.id.read_button);
+		read_button.setEnabled(false);
+		read_button.setOnClickListener(read_listen);
+	}
 }
