@@ -12,6 +12,9 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
 import com.ftdi.j2xx.D2xxManager;
 import com.ftdi.j2xx.FT_Device;
@@ -19,10 +22,12 @@ import com.ftdi.j2xx.FT_Device;
 import java.util.HashMap;
 import java.util.Iterator;
 
+
 public class MainActivity extends ActionBarActivity {
 	public String TAG = "PiksiDroid";
 	private static final String ACTION_USB_PERMISSION =
 			"com.android.example.USB_PERMISSION";
+	private FT_Device piksi = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -32,45 +37,36 @@ public class MainActivity extends ActionBarActivity {
 		PendingIntent mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
 		IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
 		registerReceiver(mUsbReceiver, filter);
-
-		UsbDevice piksidev = null;
 		HashMap<String, UsbDevice> deviceList = mUsbManager.getDeviceList();
 		Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
 		while(deviceIterator.hasNext()){
 			UsbDevice device = deviceIterator.next();
 			if ((device.getVendorId() == 0x403) && (device.getProductId() == 0x6014))
 				mUsbManager.requestPermission(device, mPermissionIntent);
-				piksidev = device;
 		}
-		if (piksidev == null) {
-			Log.d(TAG, "No Piksi connected!");
-		}
-		try {
-			D2xxManager d2xx = D2xxManager.getInstance(this);
 
-			int devCount = 0;
-			devCount = d2xx.createDeviceInfoList(this);
-			D2xxManager.FtDeviceInfoListNode[] devList = new D2xxManager.FtDeviceInfoListNode[devCount];
-			d2xx.getDeviceInfoList(devCount, devList);
-			FT_Device piksi = d2xx.openByIndex(this, 0);
-
-			if (piksi == null) {
-				D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot open device!");
-				throw myException;
-			}
-			if (!piksi.setBaudRate(Utils.baudrate)) {
-				D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot set baudrate!!");
-				throw myException;
-			}
-
-			byte foo[] = new byte[100];
-			int i = piksi.read(foo, 100, 5000);
-			Log.d(TAG, "" + i);
-			Log.d(TAG, HexDump.dumpHexString(foo));
-		} catch (D2xxManager.D2xxException e) {
-			Log.d(TAG, e.toString());
-		}
+		Button read_button = (Button)findViewById(R.id.read_button);
+		read_button.setEnabled(false);
+		read_button.setOnClickListener(read_listen);
 	}
+
+	View.OnClickListener read_listen = new View.OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			if (piksi == null) {
+				showToast("Piksi not connected!");
+				return;
+			}
+			int available = piksi.getQueueStatus();
+			if (available <= 0) {
+				return;
+			}
+			byte[] data = new byte[available];
+			int rc = piksi.read(data, available);
+			Log.d(TAG, "" + rc);
+			Log.d(TAG, HexDump.dumpHexString(data, 0, available));
+		}
+	};
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -104,7 +100,33 @@ public class MainActivity extends ActionBarActivity {
 
 					if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
 						if(device != null){
-							Log.d(TAG, "We have OK!");
+							try {
+								D2xxManager d2xx = D2xxManager.getInstance(context);
+								int devCount = 0;
+								devCount = d2xx.createDeviceInfoList(context);
+								D2xxManager.FtDeviceInfoListNode[] devList = new D2xxManager.FtDeviceInfoListNode[devCount];
+								d2xx.getDeviceInfoList(devCount, devList);
+								piksi = d2xx.openByIndex(context, 0);
+								if (piksi == null) {
+									D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot open device!");
+									throw myException;
+								}
+								if (!piksi.setDataCharacteristics(D2xxManager.FT_DATA_BITS_8, D2xxManager.FT_STOP_BITS_1, D2xxManager.FT_PARITY_NONE)) {
+									D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot set 8,1,N!");
+									throw myException;
+								}
+								if (!piksi.setBaudRate(Utils.baudrate)) {
+									D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot set baudrate!!");
+									throw myException;
+								}
+								piksi.stopInTask();
+								piksi.restartInTask();
+
+								((Button)findViewById(R.id.read_button)).setEnabled(true);
+
+							} catch (D2xxManager.D2xxException e) {
+								Log.d(TAG, e.toString());
+							}
 						}
 					}
 					else {
@@ -114,4 +136,17 @@ public class MainActivity extends ActionBarActivity {
 			}
 		}
 	};
+
+	private void showToast(final String message) {
+		runOnUiThread(new Runnable() {
+						  public void run() {
+							  Context context = getApplicationContext();
+							  CharSequence text = message;
+							  int duration = Toast.LENGTH_SHORT;
+							  Toast toast = Toast.makeText(context, text, duration);
+							  toast.show();
+						  }
+					  }
+		);
+	}
 }
