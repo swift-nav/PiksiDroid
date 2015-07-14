@@ -39,7 +39,7 @@ public class SBPHandler {
         receiveThread = null;
     }
 
-    public SBPMessage receive() {
+    public SBPMessage receive() throws IOException {
         byte[] preamble = driver.read(1);
         if ((preamble == null) || (preamble[0] != PREAMBLE)) {
             return null;
@@ -53,13 +53,10 @@ public class SBPHandler {
         calccrc = CRC16.crc16(data, calccrc);
 
         int crc = ByteBuffer.wrap(driver.read(2)).order(ByteOrder.LITTLE_ENDIAN).getShort() & 0xffff;
-        if (crc != calccrc)
-            Log.d(TAG, String.format("Barf 0x%X != 0x%X", crc, calccrc));
-
-        Log.d(TAG, "Type = " + header.type);
-        Log.d(TAG, "Sender = " + header.sender);
-        Log.d(TAG, "Length = " + header.len);
-        Log.d(TAG, HexDump.dumpHexString(data));
+        if (crc != calccrc) {
+            Log.w(TAG, "CRC error in received message");
+            return null;
+        }
 
         return new SBPMessage(header.sender, header.type, data);
     }
@@ -90,9 +87,13 @@ public class SBPHandler {
         @Override
         public void run() {
             while (!stopFlag) {
-                SBPMessage msg = receive();
-                if (msg == null)
+                SBPMessage msg = null;
+                try {
+                    msg = receive();
+                } catch (IOException e) {
+                    Log.e(TAG, "IOException in listener thread!");
                     break;
+                }
 
                 for (Callback cb : callbacks) {
                     cb.dispatch(msg);

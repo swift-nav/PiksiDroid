@@ -72,10 +72,9 @@ public class TestHandler extends TestCase {
         }
 
         @Override
-        public byte[] read(int len) {
+        public byte[] read(int len) throws IOException {
             if (pos + len > data.length) {
-                Log.d(TAG, "Read past end of buffer!");
-                return null;
+                throw new IOException("Read past end of buffer!");
             }
 
             byte[] ret = Arrays.copyOfRange(data, pos, pos+len);
