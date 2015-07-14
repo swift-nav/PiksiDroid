@@ -40,6 +40,7 @@ import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.msg.MsgPrint;
 import com.swiftnav.sbp.msg.SBPMessage;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
@@ -119,7 +120,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 					if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
 						if (device != null) {
-							piksi = new PiksiDriver(context);
+
+							try {
+								piksi = new PiksiDriver(context);
+							} catch (IOException e) {
+								e.printStackTrace();
+								Log.e(TAG, "IOException in PikdiDriver constructor!");
+								return;
+							}
 							handler = new SBPHandler(piksi);
 							handler.add_callback(SBPMessage.SBP_MSG_PRINT, new SBPCallback() {
 								@Override
@@ -134,7 +142,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 								}
 							});
 							Log.d(TAG, "All ready to go...");
-							//handler.start();
+							handler.start();
 						}
 					} else {
 						Log.d(TAG, "permission denied for device " + device);

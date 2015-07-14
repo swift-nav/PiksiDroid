@@ -29,9 +29,7 @@ public class PiksiDriver implements SBPDriver {
 	FT_Device piksi = null;
 	String TAG = "PiksiDriver";
 
-	public PiksiDriver(Context context) {
-		try {
-
+	public PiksiDriver(Context context) throws IOException {
 			D2xxManager d2xx = D2xxManager.getInstance(context);
 			int devCount;
 			devCount = d2xx.createDeviceInfoList(context);
@@ -40,25 +38,18 @@ public class PiksiDriver implements SBPDriver {
 			piksi = d2xx.openByIndex(context, 0);
 			synchronized (piksi) {
 				if (piksi == null) {
-					D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot open device!");
-					throw myException;
+					throw new IOException("Cannot open device!");
 				}
 				if (!piksi.setDataCharacteristics(D2xxManager.FT_DATA_BITS_8, D2xxManager.FT_STOP_BITS_1, D2xxManager.FT_PARITY_NONE)) {
-					D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot set 8,1,N!");
-					throw myException;
+					throw new IOException("Cannot set 8,1,N!");
 				}
 				if (!piksi.setBaudRate(Utils.baudrate)) {
-					D2xxManager.D2xxException myException = new D2xxManager.D2xxException("Cannot set baudrate!!");
-					throw myException;
+					throw new IOException("Cannot set baudrate!!");
 				}
 				piksi.stopInTask();
 				piksi.purge((byte) (D2xxManager.FT_PURGE_TX | D2xxManager.FT_PURGE_RX));
 				piksi.restartInTask();
 			}
-
-		} catch (D2xxManager.D2xxException e) {
-			Log.d(TAG, e.toString());
-		}
 	}
 
 	public void close() {
