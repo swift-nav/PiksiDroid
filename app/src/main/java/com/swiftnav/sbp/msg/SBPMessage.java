@@ -1,21 +1,27 @@
 package com.swiftnav.sbp.msg;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 /**
  * Created by gareth on 7/13/15.
  */
 public class SBPMessage {
     /* Message IDs */
     public static final int SBP_MSG_PRINT = 0x0010;
+    public static final int SBP_MSG_TRACKING_STATE = 0x0013;
     public static final int SBP_MSG_POS_LLH = 0x0201;
 
     public final int sender;
     public final int type;
     protected byte[] payload;
+    protected ByteBuffer payloadBuffer;
 
     public SBPMessage(SBPMessage msg) {
         sender = msg.sender;
         type = msg.type;
         payload = msg.payload;
+        payloadBuffer = ByteBuffer.wrap(payload).order(ByteOrder.LITTLE_ENDIAN);
     }
 
     public SBPMessage(int sender_, int type_, byte[] payload_) {
@@ -35,4 +41,47 @@ public class SBPMessage {
     public byte[] getPayload() {
         return payload;
     }
+
+
+    protected int getU8() {
+        return payloadBuffer.get() & 0xff;
+    }
+
+    protected int getU16() {
+        return payloadBuffer.getShort() & 0xffff;
+    }
+
+    protected long getU32() {
+        return payloadBuffer.getInt() & 0xffffffffl;
+    }
+
+    protected float getFloat() {
+        return payloadBuffer.getFloat();
+    }
+
+    protected double getDouble() {
+        return payloadBuffer.getDouble();
+    }
+
+    protected void putU8(int x) {
+        payloadBuffer.put((byte) x);
+    }
+
+    protected void putU16(int x) {
+        payloadBuffer.putShort((short) x);
+    }
+
+    protected void putU32(long x) {
+        payloadBuffer.putInt((int) x);
+    }
+
+    protected void putFloat(float x) {
+        payloadBuffer.putFloat(x);
+    }
+
+    protected void putDouble(double x) {
+        payloadBuffer.putDouble(x);
+    }
+
+
 }

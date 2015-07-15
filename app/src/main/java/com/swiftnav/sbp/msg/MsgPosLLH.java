@@ -8,7 +8,7 @@ import java.nio.ByteOrder;
  */
 public class MsgPosLLH extends SBPMessage {
     public static final int SIZE = 34;
-    public int tow;
+    public long tow;
     public double lat;
     public double lon;
     public double height;
@@ -26,30 +26,29 @@ public class MsgPosLLH extends SBPMessage {
         assert (msg.type == SBP_MSG_POS_LLH);
         assert (msg.payload.length == SIZE);
 
-        ByteBuffer bb = ByteBuffer.wrap(payload).order(ByteOrder.LITTLE_ENDIAN);
-        tow = bb.getInt();
-        lat = bb.getDouble();
-        lon = bb.getDouble();
-        height = bb.getDouble();
-        h_accuracy = bb.getShort() & 0xffff;
-        v_accuracy = bb.getShort() & 0xffff;
-        n_sats = bb.get() & 0xff;
-        flags = bb.get() & 0xff;
+        tow = getU32();
+        lat = getDouble();
+        lon = getDouble();
+        height = getDouble();
+        h_accuracy = getU16();
+        v_accuracy = getU16();
+        n_sats = getU8();
+        flags = getU8();
     }
 
     @Override
     public byte[] getPayload() {
-        ByteBuffer bb = ByteBuffer.allocate(SIZE).order(ByteOrder.LITTLE_ENDIAN);
+        payloadBuffer = ByteBuffer.allocate(SIZE).order(ByteOrder.LITTLE_ENDIAN);
 
-        bb.putInt(tow);
-        bb.putDouble(lat);
-        bb.putDouble(lon);
-        bb.putDouble(height);
-        bb.putShort((short) h_accuracy);
-        bb.putShort((short) v_accuracy);
-        bb.put((byte) n_sats);
-        bb.put((byte)flags);
-        payload = bb.array();
+        putU32(tow);
+        putDouble(lat);
+        putDouble(lon);
+        putDouble(height);
+        putU16(h_accuracy);
+        putU16(v_accuracy);
+        putU8(n_sats);
+        putU8(flags);
+        payload = payloadBuffer.array();
         return payload;
     }
 }
