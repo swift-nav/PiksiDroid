@@ -1,0 +1,33 @@
+package com.swiftnav.sbp.msg;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+/**
+ * Created by gareth on 7/14/15.
+ */
+public class MsgPosLLH extends SBPMessage {
+    public int tow;
+    public float lat;
+    public float lon;
+    public float height;
+    public int h_accuracy;
+    public int v_accuracy;
+    public int n_sats;
+    public int flags;
+
+    public MsgPosLLH(SBPMessage msg) {
+        super(msg);
+        assert (msg.type == SBP_MSG_POS_LLH);
+        ByteBuffer bb = ByteBuffer.wrap(payload).order(ByteOrder.LITTLE_ENDIAN);
+
+        tow = bb.getInt();
+        lat = bb.getFloat();
+        lon = bb.getFloat();
+        height = bb.getFloat();
+        h_accuracy = bb.getShort() & 0xffff;
+        v_accuracy = bb.getShort() & 0xffff;
+        n_sats = bb.get() & 0xff;
+        flags = bb.get() & 0xff;
+    }
+}
