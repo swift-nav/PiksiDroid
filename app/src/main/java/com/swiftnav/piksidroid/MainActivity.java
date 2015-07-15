@@ -31,6 +31,12 @@ import android.widget.TabHost;
 import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -51,8 +57,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.concurrent.Semaphore;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
 	String TAG = "PiksiDroid";
@@ -61,6 +69,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 	PiksiDriver piksi;
 	LinkedList<PiksiPoint> allPiksiPoints = new LinkedList<>();
 	LinkedList<Polyline> allPiksiPolylines = new LinkedList<>();
+	ArrayList<ArrayList<Entry>> chanEntries = new ArrayList<>();
+	ArrayList<String> xVals = new ArrayList<String>();
+	ArrayList<Entry> valsChan1 = new ArrayList<>();
+	ArrayList<LineDataSet> dataSets = new ArrayList<>();
+	int msgCount = 0;
+	Boolean firstTrackingMessage = true;
+	Semaphore chart = new Semaphore(1);
 
 	@Override
 	protected void onStart() {
@@ -186,13 +201,86 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 				e.printStackTrace();
 			}
 
+			int len = track.states.length;
+			if (firstTrackingMessage) {
+				firstTrackingMessage = false;
+				for (int i = 0; i < len; i++) {
+					chanEntries.add(new ArrayList<Entry>());
+					LineDataSet tmpDataSet = new LineDataSet(chanEntries.get(i), "Chan " + i);
+					tmpDataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+					tmpDataSet.setDrawCircles(false);
+					tmpDataSet.setDrawCircleHole(false);
+					tmpDataSet.setDrawCubic(false);
+					tmpDataSet.setLineWidth(2f);
+					tmpDataSet.setDrawValues(false);
+					dataSets.add(tmpDataSet);
+				}
+			} else {
+				try {
+					chart.acquire();
+					for (int i = 0; i < len; i++) {
+						MsgTrackingState.TrackingChannelState chanState = track.states[i];
+						float cn0 = chanState.cn0;
+						int running = chanState.state;
+						int prn = chanState.prn;
+						ArrayList<Entry> cEntries = chanEntries.get(i);
 
+						if (cEntries.size() > 99) {
+							for (int pos = 0; pos < 99; pos++) {
+								Entry tmp = cEntries.get(pos + 1);
+								tmp.setXIndex(pos);
+								cEntries.set(pos, tmp);
+							}
+							Entry e = new Entry(cn0, cEntries.size());
+							cEntries.set(99, e);
+						} else {
+							Entry e = new Entry(cn0, cEntries.size());
+							cEntries.add(e);
+						}
+						dataSets.set(i, new LineDataSet(cEntries, "Chan " + i));
+						LineDataSet tmpLine = dataSets.get(i);
+
+						tmpLine.setAxisDependency(YAxis.AxisDependency.LEFT);
+						tmpLine.setDrawCircles(false);
+						tmpLine.setDrawCircleHole(false);
+						tmpLine.setDrawCubic(false);
+						tmpLine.setLineWidth(1f);
+						tmpLine.setDrawValues(false);
+						tmpLine.setColor(Utils.COLOR_LIST[i]);
+					}
+					final ArrayList<LineDataSet> fDataSets = dataSets;
+					final ArrayList<String> fxVals = xVals;
+					chart.release();
+					runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							try {
+								chart.acquire();
+								LineData data = new LineData(fxVals, fDataSets);
+								LineChart mLineChart = ((LineChart) findViewById(R.id.tracking_chart));
+								mLineChart.setData(data);
+								mLineChart.invalidate();
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							} finally {
+								chart.release();
+							}
+						}
+					});
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				} finally {
+
+				}
+			}
 		}
+
 	};
 
 	public class piksiTask extends AsyncTask<Void, Void, Long> {
 		private Context mContext;
-		public piksiTask (Context context){
+
+		public piksiTask(Context context) {
 			mContext = context;
 		}
 
@@ -238,7 +326,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 					UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 					if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
 						if (device != null) {
-							((EditText)findViewById(R.id.console)).setText("");
+							((EditText) findViewById(R.id.console)).setText("");
 							new piksiTask(context).execute();
 						}
 					} else {
@@ -256,11 +344,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 				UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 				if (device != null) {
 					Log.e(TAG, "Device disconnected!");
-					if (piksi != null ) {
+					if (piksi != null) {
 						handler.stop();
 						piksi.close();
 						piksi = null;
-						((EditText)findViewById(R.id.console)).setText("Piksi not connected!");
+						((EditText) findViewById(R.id.console)).setText("Piksi not connected!");
 					}
 				}
 			}
@@ -270,7 +358,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 	private void setupUI() {
 		TabHost tabHost = (TabHost) findViewById(R.id.tabHost);
 		tabHost.setup();
-
 
 		TabHost.TabSpec tabSpec = tabHost.newTabSpec("Piksi");
 		tabSpec.setContent(R.id.piksi);
@@ -298,8 +385,26 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 		((EditText) findViewById(R.id.console)).setText("Piksi not connected!");
 
-		((LineChart)findViewById(R.id.tracking_chart)).setTouchEnabled(false);
-		((LineChart)findViewById(R.id.tracking_chart)).setHardwareAccelerationEnabled(true);
+		LineChart mLineChart = (LineChart) findViewById(R.id.tracking_chart);
+		Legend mLegend = mLineChart.getLegend();
+		XAxis bottomAxis = mLineChart.getXAxis();
+		YAxis rightAxis = mLineChart.getAxisRight();
+		YAxis leftAxis = mLineChart.getAxisLeft();
+
+		mLineChart.setHardwareAccelerationEnabled(true);
+		mLineChart.setTouchEnabled(false);
+		mLineChart.setDescription("");
+		mLineChart.setDescriptionColor(Color.DKGRAY);
+		mLegend.setPosition(Legend.LegendPosition.BELOW_CHART_CENTER);
+		mLegend.setTextColor(Color.WHITE);
+		mLegend.setTextSize(9f);
+		mLegend.setEnabled(true);
+		bottomAxis.setEnabled(false);
+		leftAxis.setTextColor(Color.WHITE);
+		rightAxis.setTextColor(Color.WHITE);
+
+		for (int i = 0; i < 100; i++)
+			xVals.add("" + i);
 	}
 
 	@Override
