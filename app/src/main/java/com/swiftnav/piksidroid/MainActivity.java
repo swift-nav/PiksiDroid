@@ -36,6 +36,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
+import com.swiftnav.sbp.msg.MsgPosLLH;
 import com.swiftnav.sbp.msg.MsgPrint;
 import com.swiftnav.sbp.msg.SBPMessage;
 
@@ -131,6 +132,34 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 					});
 				}
 			});
+			handler.add_callback(SBPMessage.SBP_MSG_POS_LLH, new SBPCallback() {
+				@Override
+				public void receiveCallback(SBPMessage msg) {
+					MsgPosLLH posLLH = null;
+					try {
+						posLLH = new MsgPosLLH(msg);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					final double lat = posLLH.lat;
+					final double lon = posLLH.lon;
+					runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							MapFragment mapFragment = (MapFragment) getFragmentManager()
+									.findFragmentById(R.id.map_fragment);
+							GoogleMap gMap = mapFragment.getMap();
+//							CameraPosition cameraPosition =
+//									new CameraPosition.Builder()
+//											.target(new LatLng(lat, lon))
+//											.zoom(5)
+//											.build();
+//							gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+							gMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)).title("Marker"));
+						}
+					});
+				}
+			});
 			Log.d(TAG, "All ready to go...");
 			handler.start();
 			return null;
@@ -219,9 +248,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 	@Override
 	public void onMapReady(GoogleMap googleMap) {
-		googleMap.addMarker(new MarkerOptions()
-				.position(new LatLng(0, 0))
-				.title("Marker"));
+//		googleMap.addMarker(new MarkerOptions()
+//				.position(new LatLng(0, 0))
+//				.title("Marker"));
 	}
 
 }
