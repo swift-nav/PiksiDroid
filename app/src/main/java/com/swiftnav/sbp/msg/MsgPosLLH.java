@@ -9,9 +9,9 @@ import java.nio.ByteOrder;
 public class MsgPosLLH extends SBPMessage {
     public static final int SIZE = 34;
     public int tow;
-    public float lat;
-    public float lon;
-    public float height;
+    public double lat;
+    public double lon;
+    public double height;
     public int h_accuracy;
     public int v_accuracy;
     public int n_sats;
@@ -28,9 +28,9 @@ public class MsgPosLLH extends SBPMessage {
 
         ByteBuffer bb = ByteBuffer.wrap(payload).order(ByteOrder.LITTLE_ENDIAN);
         tow = bb.getInt();
-        lat = bb.getFloat();
-        lon = bb.getFloat();
-        height = bb.getFloat();
+        lat = bb.getDouble();
+        lon = bb.getDouble();
+        height = bb.getDouble();
         h_accuracy = bb.getShort() & 0xffff;
         v_accuracy = bb.getShort() & 0xffff;
         n_sats = bb.get() & 0xff;
@@ -42,9 +42,9 @@ public class MsgPosLLH extends SBPMessage {
         ByteBuffer bb = ByteBuffer.allocate(SIZE).order(ByteOrder.LITTLE_ENDIAN);
 
         bb.putInt(tow);
-        bb.putFloat(lat);
-        bb.putFloat(lon);
-        bb.putFloat(height);
+        bb.putDouble(lat);
+        bb.putDouble(lon);
+        bb.putDouble(height);
         bb.putShort((short) h_accuracy);
         bb.putShort((short) v_accuracy);
         bb.put((byte) n_sats);
