@@ -28,6 +28,10 @@ public class SBPMessage {
         this(0x42, type_, payload_);
     }
 
+    public SBPMessage(int type_) {
+        this(0x42, type_, new byte[0]);
+    }
+
     public byte[] getPayload() {
         return payload;
     }
