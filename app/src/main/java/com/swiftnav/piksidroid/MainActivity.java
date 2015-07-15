@@ -18,6 +18,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.AsyncTask;
@@ -29,11 +30,14 @@ import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.msg.MsgPosLLH;
@@ -42,12 +46,15 @@ import com.swiftnav.sbp.msg.SBPMessage;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
 	String TAG = "PiksiDroid";
 	String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
 	SBPHandler handler = null;
 	PiksiDriver piksi;
+	LinkedList<PiksiPoint> allPiksiPoints = new LinkedList<>();
+	LinkedList<Polyline> allPiksiPolylines = new LinkedList<>();
 
 	@Override
 	protected void onStart() {
@@ -143,19 +150,41 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 					}
 					final double lat = posLLH.lat;
 					final double lon = posLLH.lon;
+
+					synchronized (allPiksiPoints){
+						allPiksiPoints.add(new PiksiPoint(lat, lon));
+					}
 					runOnUiThread(new Runnable() {
 						@Override
 						public void run() {
 							MapFragment mapFragment = (MapFragment) getFragmentManager()
 									.findFragmentById(R.id.map_fragment);
 							GoogleMap gMap = mapFragment.getMap();
-//							CameraPosition cameraPosition =
-//									new CameraPosition.Builder()
-//											.target(new LatLng(lat, lon))
-//											.zoom(5)
-//											.build();
-//							gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-							gMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)).title("Marker"));
+							synchronized (allPiksiPoints) {
+								if (allPiksiPoints.size() > 2) {
+									LatLng from = allPiksiPoints.get(allPiksiPoints.size() - 1).getLatLng();
+									LatLng to = allPiksiPoints.get(allPiksiPoints.size() - 2).getLatLng();
+									Polyline line = gMap.addPolyline(
+											new PolylineOptions()
+													.add(from)
+													.add(to).width(2)
+													.color(Color.RED));
+									allPiksiPolylines.add(line);
+									CameraPosition cameraPosition = new CameraPosition.Builder()
+											.target(to)
+											.zoom(18)
+											.build();
+									gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+									if (allPiksiPolylines.size() > 200) {
+										Polyline rLine = allPiksiPolylines.get(0);
+										rLine.remove();
+
+										allPiksiPoints.remove(0);
+										allPiksiPoints.remove(1);
+										allPiksiPolylines.remove(0);
+									}
+								}
+							}
 						}
 					});
 				}
@@ -248,9 +277,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 	@Override
 	public void onMapReady(GoogleMap googleMap) {
-//		googleMap.addMarker(new MarkerOptions()
-//				.position(new LatLng(0, 0))
-//				.title("Marker"));
 	}
 
 }
