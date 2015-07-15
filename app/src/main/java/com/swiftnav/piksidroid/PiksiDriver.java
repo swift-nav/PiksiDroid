@@ -14,7 +14,6 @@
 package com.swiftnav.piksidroid;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.ftdi.j2xx.D2xxManager;
 import com.ftdi.j2xx.FT_Device;
@@ -45,7 +44,7 @@ public class PiksiDriver implements SBPDriver {
 			if (!piksi.setDataCharacteristics(D2xxManager.FT_DATA_BITS_8, D2xxManager.FT_STOP_BITS_1, D2xxManager.FT_PARITY_NONE)) {
 				throw new IOException("Cannot set 8,1,N!");
 			}
-			if (!piksi.setBaudRate(Utils.baudrate)) {
+			if (!piksi.setBaudRate(Utils.BAUDRATE)) {
 				throw new IOException("Cannot set baudrate!!");
 			}
 			piksi.stopInTask();
@@ -66,7 +65,7 @@ public class PiksiDriver implements SBPDriver {
 		synchronized (piksi) {
 			if (!piksi.isOpen())
 				throw new IOException("Piksi device is closed!");
-			piksi.read(data, len, 100);
+			piksi.read(data, len, Utils.READTIMEOUT);
 		}
 		return data;
 	}

@@ -58,7 +58,8 @@
                         android:clickable="false"
                         android:cursorVisible="false"
                         android:focusable="false"
-                        android:focusableInTouchMode="false"/>
+                        android:focusableInTouchMode="false"
+                        android:gravity="center"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -68,7 +69,7 @@
                     android:orientation="vertical">
 
                     <com.github.mikephil.charting.charts.LineChart
-                        android:id="@+id/line_chart"
+                        android:id="@+id/tracking_chart"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent" />
                 </LinearLayout>

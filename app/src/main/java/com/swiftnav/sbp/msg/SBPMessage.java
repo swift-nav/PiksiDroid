@@ -9,7 +9,7 @@ import java.nio.ByteOrder;
 public class SBPMessage {
     /* Message IDs */
     public static final int SBP_MSG_PRINT = 0x0010;
-    public static final int SBP_MSG_TRACKING_STATE = 0x0013;
+    public static final int SBP_MSG_TRACKING_STATE = 0x0016;
     public static final int SBP_MSG_POS_LLH = 0x0201;
 
     public final int sender;

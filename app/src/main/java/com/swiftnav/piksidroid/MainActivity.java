@@ -30,6 +30,7 @@ import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.Toast;
 
+import com.github.mikephil.charting.charts.LineChart;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -42,6 +43,7 @@ import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.msg.MsgPosLLH;
 import com.swiftnav.sbp.msg.MsgPrint;
+import com.swiftnav.sbp.msg.MsgTrackingState;
 import com.swiftnav.sbp.msg.SBPMessage;
 
 import java.io.IOException;
@@ -77,7 +79,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		HashMap<String, UsbDevice> deviceList = mUsbManager.getDeviceList();
 
 		for (UsbDevice device : deviceList.values()) {
-			if ((device.getVendorId() == 0x403) && (device.getProductId() == 0x6014))
+			if ((device.getVendorId() == Utils.PIKSI_VID) && (device.getProductId() == Utils.PIKSI_PID))
 				mUsbManager.requestPermission(device, mPermissionIntent);
 		}
 
@@ -90,6 +92,99 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		unregisterReceiver(mUsbReceiver);
 		unregisterReceiver(mUsbReceiverDisconnect);
 	}
+
+	public SBPCallback printCallback = new SBPCallback() {
+		@Override
+		public void receiveCallback(SBPMessage msg) {
+			MsgPrint msgPrint = null;
+			try {
+				msgPrint = new MsgPrint(msg);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			final MsgPrint message = msgPrint;
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					EditText console = (EditText) findViewById(R.id.console);
+					final ScrollView sv = (ScrollView) findViewById(R.id.scrollView);
+					console.append(message.text);
+					final EditText c = console;
+					sv.post(new Runnable() {
+						@Override
+						public void run() {
+							sv.smoothScrollTo(0, c.getBottom());
+						}
+					});
+				}
+			});
+		}
+	};
+
+	public SBPCallback llhCallback = new SBPCallback() {
+		@Override
+		public void receiveCallback(SBPMessage msg) {
+			MsgPosLLH posLLH = null;
+			try {
+				posLLH = new MsgPosLLH(msg);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			final double lat = posLLH.lat;
+			final double lon = posLLH.lon;
+
+			synchronized (allPiksiPoints) {
+				allPiksiPoints.add(new PiksiPoint(lat, lon));
+			}
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					MapFragment mapFragment = (MapFragment) getFragmentManager()
+							.findFragmentById(R.id.map_fragment);
+					GoogleMap gMap = mapFragment.getMap();
+					synchronized (allPiksiPoints) {
+						if (allPiksiPoints.size() > 2) {
+							LatLng from = allPiksiPoints.get(allPiksiPoints.size() - 1).getLatLng();
+							LatLng to = allPiksiPoints.get(allPiksiPoints.size() - 2).getLatLng();
+							Polyline line = gMap.addPolyline(
+									new PolylineOptions()
+											.add(from)
+											.add(to).width(2)
+											.color(Color.RED));
+							allPiksiPolylines.add(line);
+							CameraPosition cameraPosition = new CameraPosition.Builder()
+									.target(to)
+									.zoom(18)
+									.build();
+							gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+							if (allPiksiPolylines.size() > Utils.LASTLINES) {
+								Polyline rLine = allPiksiPolylines.get(0);
+								rLine.remove();
+
+								allPiksiPoints.remove(0);
+								allPiksiPoints.remove(1);
+								allPiksiPolylines.remove(0);
+							}
+						}
+					}
+				}
+			});
+		}
+	};
+
+	public SBPCallback trackingCallback = new SBPCallback() {
+		@Override
+		public void receiveCallback(SBPMessage msg) {
+			MsgTrackingState track = null;
+			try {
+				track = new MsgTrackingState(msg);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+
+		}
+	};
 
 	public class piksiTask extends AsyncTask<Void, Void, Long> {
 		private Context mContext;
@@ -112,91 +207,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 				return null;
 			}
 			handler = new SBPHandler(piksi);
-			handler.add_callback(SBPMessage.SBP_MSG_PRINT, new SBPCallback() {
-				@Override
-				public void receiveCallback(SBPMessage msg) {
-					MsgPrint msgPrint = null;
-					try {
-						msgPrint = new MsgPrint(msg);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					final MsgPrint message = msgPrint;
-					runOnUiThread(new Runnable() {
-						@Override
-						public void run() {
-							EditText console = (EditText) findViewById(R.id.console);
-							final ScrollView sv = (ScrollView) findViewById(R.id.scrollView);
-							console.append(message.text);
-							final EditText c = console;
-							sv.post(new Runnable() {
-								@Override
-								public void run() {
-									sv.smoothScrollTo(0, c.getBottom());
-								}
-							});
-						}
-					});
-				}
-			});
-			handler.add_callback(SBPMessage.SBP_MSG_POS_LLH, new SBPCallback() {
-				@Override
-				public void receiveCallback(SBPMessage msg) {
-					MsgPosLLH posLLH = null;
-					try {
-						posLLH = new MsgPosLLH(msg);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					final double lat = posLLH.lat;
-					final double lon = posLLH.lon;
 
-					synchronized (allPiksiPoints){
-						allPiksiPoints.add(new PiksiPoint(lat, lon));
-					}
-					runOnUiThread(new Runnable() {
-						@Override
-						public void run() {
-							MapFragment mapFragment = (MapFragment) getFragmentManager()
-									.findFragmentById(R.id.map_fragment);
-							GoogleMap gMap = mapFragment.getMap();
-							synchronized (allPiksiPoints) {
-								if (allPiksiPoints.size() > 2) {
-									LatLng from = allPiksiPoints.get(allPiksiPoints.size() - 1).getLatLng();
-									LatLng to = allPiksiPoints.get(allPiksiPoints.size() - 2).getLatLng();
-									Polyline line = gMap.addPolyline(
-											new PolylineOptions()
-													.add(from)
-													.add(to).width(2)
-													.color(Color.RED));
-									allPiksiPolylines.add(line);
-									CameraPosition cameraPosition = new CameraPosition.Builder()
-											.target(to)
-											.zoom(18)
-											.build();
-									gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-									if (allPiksiPolylines.size() > 200) {
-										Polyline rLine = allPiksiPolylines.get(0);
-										rLine.remove();
+			handler.add_callback(SBPMessage.SBP_MSG_PRINT, printCallback);
+			handler.add_callback(SBPMessage.SBP_MSG_POS_LLH, llhCallback);
+			handler.add_callback(SBPMessage.SBP_MSG_TRACKING_STATE, trackingCallback);
 
-										allPiksiPoints.remove(0);
-										allPiksiPoints.remove(1);
-										allPiksiPolylines.remove(0);
-									}
-								}
-							}
-						}
-					});
-				}
-			});
 			Log.d(TAG, "All ready to go...");
+
 			handler.start();
 			return null;
 		}
 	}
 
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
-
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
 			if (ACTION_USB_PERMISSION.equals(action)) {
@@ -204,10 +227,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 					UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 					if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
 						if (device != null) {
+							((EditText)findViewById(R.id.console)).setText("");
 							new piksiTask(context).execute();
 						}
 					} else {
-						Log.d(TAG, "permission denied for device " + device);
+						Log.d(TAG, "Permission denied for device " + device);
 					}
 				}
 			}
@@ -217,7 +241,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 	BroadcastReceiver mUsbReceiverDisconnect = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
-
 			if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
 				UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 				if (device != null) {
@@ -226,24 +249,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 						handler.stop();
 						piksi.close();
 						piksi = null;
-						Log.d(TAG, "Closed Piksi from outside driver!");
+						((EditText)findViewById(R.id.console)).setText("Piksi not connected!");
 					}
 				}
 			}
 		}
 	};
-
-	private void showToast(final String message) {
-		runOnUiThread(new Runnable() {
-						  public void run() {
-							  Context context = getApplicationContext();
-							  int duration = Toast.LENGTH_SHORT;
-							  Toast toast = Toast.makeText(context, message, duration);
-							  toast.show();
-						  }
-					  }
-		);
-	}
 
 	private void setupUI() {
 		TabHost tabHost = (TabHost) findViewById(R.id.tabHost);
@@ -273,10 +284,31 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		MapFragment mapFragment = (MapFragment) getFragmentManager()
 				.findFragmentById(R.id.map_fragment);
 		mapFragment.getMapAsync(this);
+
+		((EditText) findViewById(R.id.console)).setText("Piksi not connected!");
+
+		((LineChart)findViewById(R.id.tracking_chart)).setTouchEnabled(false);
+		((LineChart)findViewById(R.id.tracking_chart)).setHardwareAccelerationEnabled(true);
 	}
 
 	@Override
-	public void onMapReady(GoogleMap googleMap) {
+	public void onMapReady(GoogleMap gMap) {
+		CameraPosition cameraPosition = new CameraPosition.Builder()
+				.target(Utils.SWIFT_COORD)
+				.zoom(18)
+				.build();
+		gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 	}
 
+	public void showToast(final String message) {
+		runOnUiThread(new Runnable() {
+						  public void run() {
+							  Context context = getApplicationContext();
+							  int duration = Toast.LENGTH_SHORT;
+							  Toast toast = Toast.makeText(context, message, duration);
+							  toast.show();
+						  }
+					  }
+		);
+	}
 }

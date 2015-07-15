@@ -13,6 +13,31 @@
 
 package com.swiftnav.piksidroid;
 
+import com.google.android.gms.maps.model.LatLng;
+
+import java.io.IOException;
+
 public class Utils {
-	public static int baudrate = 1000000;
+	public static int BAUDRATE = 1000000;
+	public static int READTIMEOUT = 100;
+	public static int LASTLINES = 200;
+	public static int PIKSI_VID = 0x403;
+	public static int PIKSI_PID = 0x6014;
+
+	public static LatLng SWIFT_COORD = new LatLng(37.7625047, -122.3889322);
+
+	public static boolean isOnline() {
+
+		Runtime runtime = Runtime.getRuntime();
+		try {
+
+			Process ipProcess = runtime.exec("/system/bin/ping -c 1 8.8.8.8");
+			int     exitValue = ipProcess.waitFor();
+			return (exitValue == 0);
+
+		} catch (IOException e)          { e.printStackTrace(); }
+		catch (InterruptedException e) { e.printStackTrace(); }
+
+		return false;
+	}
 }

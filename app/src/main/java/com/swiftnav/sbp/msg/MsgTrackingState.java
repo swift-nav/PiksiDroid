@@ -10,7 +10,7 @@ public class MsgTrackingState extends SBPMessage {
         states = getTrackingChannelStates(-1);
     }
 
-    class TrackingChannelState {
+    public class TrackingChannelState {
         public static final int SIZE = 6;
         public int state;
         public int prn;
