@@ -119,6 +119,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 		@Override
 		protected Long doInBackground(Void... params) {
+			if (piksi != null) {
+				handler.stop();
+				piksi.close();
+				piksi = null;
+			}
 			try {
 				piksi = new PiksiDriver(mContext);
 			} catch (IOException e) {
@@ -172,9 +177,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 				UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 				if (device != null) {
 					Log.e(TAG, "Device disconnected!");
-					handler.stop();
-					piksi.close();
-					Log.d(TAG, "Closed Piksi from outside driver!");
+					if (piksi != null ) {
+						handler.stop();
+						piksi.close();
+						piksi = null;
+						Log.d(TAG, "Closed Piksi from outside driver!");
+					}
 				}
 			}
 		}
