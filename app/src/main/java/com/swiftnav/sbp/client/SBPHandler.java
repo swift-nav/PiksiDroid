@@ -85,6 +85,10 @@ public class SBPHandler {
         callbacks.add(new Callback(id, cb));
     }
 
+    public void add_callback(SBPCallback cb) {
+        callbacks.add(new Callback(null, cb));
+    }
+
     private class ReceiveThread extends Thread {
         boolean stopFlag = false;
 
@@ -159,6 +163,11 @@ public class SBPHandler {
         }
 
         void dispatch(SBPMessage msg) {
+            if (msg_id == null) {
+                cb.receiveCallback(msg);
+                return;
+            }
+
             for (int i : msg_id) {
                 if (i == msg.type)
                     cb.receiveCallback(msg);

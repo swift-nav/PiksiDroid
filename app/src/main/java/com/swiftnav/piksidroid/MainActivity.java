@@ -41,12 +41,16 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
+import com.swiftnav.sbp.loggers.JSONLogger;
 import com.swiftnav.sbp.msg.MsgPosLLH;
 import com.swiftnav.sbp.msg.MsgPrint;
 import com.swiftnav.sbp.msg.MsgTrackingState;
 import com.swiftnav.sbp.msg.SBPMessage;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -208,6 +212,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 			}
 			handler = new SBPHandler(piksi);
 
+			try {
+				File logfile = new File(getExternalFilesDir("logs"), "logfile");
+				OutputStream logstream = new FileOutputStream(logfile);
+				handler.add_callback(new JSONLogger(logstream));
+			} catch (Exception e) {
+				Log.e(TAG, "Error opening JSON log file: " + e.toString());
+			}
 			handler.add_callback(SBPMessage.SBP_MSG_PRINT, printCallback);
 			handler.add_callback(SBPMessage.SBP_MSG_POS_LLH, llhCallback);
 			handler.add_callback(SBPMessage.SBP_MSG_TRACKING_STATE, trackingCallback);
