@@ -41,44 +41,24 @@
                     android:layout_height="match_parent"
                     android:orientation="vertical">
 
-                    <Button
-                        style="?android:attr/buttonStyleSmall"
+                    <ScrollView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/read_text"
-                        android:id="@+id/read_button"
-                        android:layout_marginTop="43dp"
-                        android:layout_gravity="center_horizontal"/>
+                        android:id="@+id/scrollView">
+
+                    </ScrollView>
 
                     <EditText
-                        android:layout_width="365dp"
-                        android:layout_height="wrap_content"
-                        android:id="@+id/serverIP"
-                        android:layout_gravity="center_horizontal"
-                        android:editable="true"
-                        android:enabled="true"
-                        android:inputType="textUri"
-                        android:text="127.0.0.1"
-                        android:textAlignment="center"
-                        android:gravity="center"/>
-
-                    <EditText
-                        android:layout_width="288dp"
-                        android:layout_height="wrap_content"
-                        android:id="@+id/serverPort"
-                        android:layout_gravity="center_horizontal"
-                        android:text="8080"
-                        android:textAlignment="center"
-                        android:inputType="number|numberDecimal"
-                        android:gravity="center"/>
-
-                    <Button
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Connect"
-                        android:id="@+id/serverConnect"
-                        android:layout_gravity="center_horizontal"/>
-
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:inputType="textMultiLine"
+                        android:ems="10"
+                        android:id="@+id/console"
+                        android:editable="false"
+                        android:clickable="false"
+                        android:cursorVisible="false"
+                        android:focusable="false"
+                        android:focusableInTouchMode="false"/>
                 </LinearLayout>
 
                 <LinearLayout

@@ -24,9 +24,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.Toast;
 
@@ -41,22 +40,12 @@ import com.swiftnav.sbp.msg.MsgPrint;
 import com.swiftnav.sbp.msg.SBPMessage;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.Socket;
 import java.util.HashMap;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
 	String TAG = "PiksiDroid";
 	String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
-
-	static final int READBUF_SIZE = 256;
-	byte[] rbuf = new byte[READBUF_SIZE];
-
 	SBPHandler handler = null;
-
-	Socket piksiConsole;
-	OutputStream output;
-
 	PiksiDriver piksi;
 
 	@Override
@@ -94,23 +83,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		unregisterReceiver(mUsbReceiverDisconnect);
 	}
 
-	View.OnClickListener read_listen = new View.OnClickListener() {
-		@Override
-		public void onClick(View v) {
-			if (piksi == null) {
-				showToast("Piksi not connected!");
-				return;
-			}
-		}
-	};
-
-	View.OnClickListener connect_listen = new View.OnClickListener() {
-		@Override
-		public void onClick(View v) {
-			new Thread(socketLoop).start();
-		}
-	};
-
 	public class piksiTask extends AsyncTask<Void, Void, Long> {
 		private Context mContext;
 		public piksiTask (Context context){
@@ -141,7 +113,22 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					Log.d(TAG, "MsgPrint: " + msgPrint.text);
+					final MsgPrint message = msgPrint;
+					runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							EditText console = (EditText) findViewById(R.id.console);
+							final ScrollView sv = (ScrollView) findViewById(R.id.scrollView);
+							console.append(message.text);
+							final EditText c = console;
+							sv.post(new Runnable() {
+								@Override
+								public void run() {
+									sv.smoothScrollTo(0, c.getBottom());
+								}
+							});
+						}
+					});
 				}
 			});
 			Log.d(TAG, "All ready to go...");
@@ -200,29 +187,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		);
 	}
 
-	private Runnable socketLoop = new Runnable() {
-		@Override
-		public void run() {
-			int serverPort;
-			String serverIP = ((EditText)findViewById(R.id.serverIP)).getText().toString().trim();
-			try {
-				serverPort = Integer.parseInt(((EditText)findViewById(R.id.serverPort)).getText().toString().trim());
-			}
-			catch (NumberFormatException e) {
-				showToast("Please insert a good server port!");
-				return;
-			}
-			try {
-				piksiConsole = new Socket(serverIP, serverPort);
-				output = piksiConsole.getOutputStream();
-				showToast("Connected to " + serverIP);
-			} catch (Exception e) {
-				Log.d(TAG, e.toString());
-				showToast("Could not connect to " + serverIP);
-			}
-		}
-	};
-
 	private void setupUI() {
 		TabHost tabHost = (TabHost) findViewById(R.id.tabHost);
 		tabHost.setup();
@@ -247,13 +211,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		tabSpec.setContent(R.id.observation);
 		tabSpec.setIndicator("Observation");
 		tabHost.addTab(tabSpec);
-
-		Button read_button = (Button) findViewById(R.id.read_button);
-		read_button.setEnabled(false);
-		read_button.setOnClickListener(read_listen);
-
-		Button connect_button = (Button) findViewById(R.id.serverConnect);
-		connect_button.setOnClickListener(connect_listen);
 
 		MapFragment mapFragment = (MapFragment) getFragmentManager()
 				.findFragmentById(R.id.map_fragment);
