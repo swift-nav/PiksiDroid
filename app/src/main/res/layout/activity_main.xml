@@ -35,60 +35,25 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <LinearLayout
-                    android:id="@+id/piksi"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                    <ScrollView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:id="@+id/scrollView">
-
-                    </ScrollView>
-
-                    <EditText
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:inputType="textMultiLine"
-                        android:ems="10"
-                        android:id="@+id/console"
-                        android:editable="false"
-                        android:clickable="false"
-                        android:cursorVisible="false"
-                        android:focusable="false"
-                        android:focusableInTouchMode="false"
-                        android:gravity="center"/>
-                </LinearLayout>
+                <fragment android:name="com.swiftnav.piksidroid.ConsoleFragment"
+                          android:id="@+id/console_fragment"
+                          android:layout_height="match_parent"
+                          android:layout_width="match_parent"/>
 
                 <fragment android:name="com.swiftnav.piksidroid.TrackingFragment"
                           android:id="@+id/tracking_fragment"
                           android:layout_height="match_parent"
                           android:layout_width="match_parent"/>
 
-                <LinearLayout
-                    android:id="@+id/map"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-                    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-                              android:name="com.google.android.gms.maps.MapFragment"
-                              android:id="@+id/map_fragment"
-                              android:layout_width="match_parent"
-                              android:layout_height="match_parent"/>
-                </LinearLayout>
-                <LinearLayout
-                    android:id="@+id/observation"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-                    <fragment android:name="com.swiftnav.piksidroid.ObservationFragment"
-                        android:id="@+id/observation_fragment"
-                        android:layout_height="match_parent"
-                        android:layout_width="match_parent"/>
-                </LinearLayout>
+                <fragment android:name="com.swiftnav.piksidroid.MapFragment"
+                          android:id="@+id/map_fragment"
+                          android:layout_height="match_parent"
+                          android:layout_width="match_parent"/>
 
+                <fragment android:name="com.swiftnav.piksidroid.ObservationFragment"
+                          android:id="@+id/observation_fragment"
+                          android:layout_height="match_parent"
+                          android:layout_width="match_parent"/>
             </FrameLayout>
 
         </LinearLayout>
