@@ -303,6 +303,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 			handler.add_callback(SBPMessage.SBP_MSG_POS_LLH, llhCallback);
 			handler.add_callback(SBPMessage.SBP_MSG_TRACKING_STATE, trackingCallback);
 
+			((ObservationFragment)getFragmentManager().findFragmentById(R.id.observation_fragment))
+					.connectPiksi(handler);
 			Log.d(TAG, "All ready to go...");
 
 			handler.start();

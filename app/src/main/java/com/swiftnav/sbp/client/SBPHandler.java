@@ -67,14 +67,15 @@ public class SBPHandler {
 
     public void send(SBPMessage msg) throws IOException {
         byte[] payload = msg.getPayload();
-        Header header = new Header(msg.sender, msg.type, payload.length);
-        byte[] headerb = header.build();
-        driver.write(new byte[] {PREAMBLE});
-        driver.write(headerb);
-        driver.write(payload);
-        int crc = CRC16.crc16(headerb);
-        crc = CRC16.crc16(payload, crc);
-        driver.write(ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort((short) crc).array());
+        byte[] binmsg = new byte[payload.length + 8];
+        ByteBuffer bb = ByteBuffer.wrap(binmsg).order(ByteOrder.LITTLE_ENDIAN);
+        bb.put(PREAMBLE);
+        bb.putShort((short) msg.type);
+        bb.putShort((short) msg.sender);
+        bb.put((byte)payload.length);
+        bb.put(payload);
+        bb.putShort((short) CRC16.crc16(bb.array()));
+        driver.write(bb.array());
     }
 
     public void add_callback(int id, SBPCallback cb) {

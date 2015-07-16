@@ -3,7 +3,6 @@ package com.swiftnav.sbp.loggers;
 import android.util.Base64;
 import android.util.Log;
 
-import com.swiftnav.sbp.client.CRC16;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.msg.SBPMessage;
 

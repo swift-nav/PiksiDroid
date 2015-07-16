@@ -10,6 +10,9 @@ public class SBPMessage {
     /* Message IDs */
     public static final int SBP_MSG_PRINT = 0x0010;
     public static final int SBP_MSG_TRACKING_STATE = 0x0016;
+    public static final int SBP_MSG_OBS = 0x0043;
+    public static final int SBP_MSG_BASE_POS = 0x0044;
+    public static final int SBP_MSG_EPHEMERIS = 0x0047;
     public static final int SBP_MSG_POS_LLH = 0x0201;
 
     public final int sender;
