@@ -5,7 +5,7 @@ android {
     buildToolsVersion "22.0.1"
     defaultConfig {
         applicationId "com.swiftnav.piksidroid"
-        minSdkVersion 12
+        minSdkVersion 17
         targetSdkVersion 22
         versionCode 1
         versionName "1.0"
