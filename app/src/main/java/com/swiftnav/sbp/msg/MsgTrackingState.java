@@ -19,8 +19,8 @@ public class MsgTrackingState extends SBPMessage {
         public TrackingChannelState() {
             if (payloadBuffer == null)
                 return;
-            prn = getU8();
             state = getU8();
+            prn = getU8();
             cn0 = getFloat();
         }
     }
