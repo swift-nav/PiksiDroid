@@ -11,18 +11,11 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.swiftnav.sbp.client.SBPCallback;
-import com.swiftnav.sbp.client.SBPDriver;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.msg.SBPMessage;
+import com.swiftnav.sbp.drivers.SBPDriverUDP;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 
 /**
@@ -39,7 +32,7 @@ public class ObservationFragment extends Fragment {
     Button obs_button;
     EditText obs_address;
 
-    UDPDriver driver;
+    SBPDriverUDP driver;
     SBPHandler piksiHandler;
     SBPHandler handler;
 
@@ -60,7 +53,7 @@ public class ObservationFragment extends Fragment {
         obs_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                driver = new UDPDriver(obs_address.getText().toString());
+                driver = new SBPDriverUDP(obs_address.getText().toString());
                 handler = new SBPHandler(driver);
                 handler.add_callback(OBS_MESSAGE_LIST, new SBPCallback() {
                     @Override
@@ -95,53 +88,4 @@ public class ObservationFragment extends Fragment {
         });
     }
 
-    class UDPDriver implements SBPDriver {
-        static final int RECV_SIZE = 256;
-        static final int DGRAM_PORT = 2000;
-        DatagramSocket socket;
-        String server;
-        byte[] rxdata;
-
-        public UDPDriver(String server_) {
-            server = server_;
-            rxdata = new byte[0];
-        }
-
-        @Override
-        public byte[] read(int len) throws IOException {
-            if (socket == null)
-                openSocket();
-
-            while (rxdata.length < len) {
-                DatagramPacket packet = new DatagramPacket(new byte[RECV_SIZE], RECV_SIZE);
-                socket.receive(packet);
-                ByteBuffer bb = ByteBuffer.wrap(new byte[rxdata.length + packet.getLength()]);
-                bb.put(rxdata);
-                bb.put(packet.getData(), rxdata.length, packet.getLength());
-                rxdata = bb.array();
-            }
-            byte[] ret = Arrays.copyOf(rxdata, len);
-            rxdata = Arrays.copyOfRange(rxdata, len, rxdata.length - len);
-            return ret;
-        }
-
-        @Override
-        public void write(byte[] data) throws IOException {
-            if (socket == null)
-                openSocket();
-
-            DatagramPacket packet = new DatagramPacket(data, data.length);
-            socket.send(packet);
-        }
-
-        private void openSocket() throws IOException {
-            try {
-                socket = new DatagramSocket();
-                socket.connect(InetAddress.getByName(server), DGRAM_PORT);
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to setup socket");
-                e.printStackTrace();
-            }
-        }
-    }
 }
