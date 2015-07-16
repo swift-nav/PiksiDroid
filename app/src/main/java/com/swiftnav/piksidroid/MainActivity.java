@@ -18,7 +18,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.AsyncTask;
@@ -32,34 +31,22 @@ import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
-import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.loggers.JSONLogger;
-import com.swiftnav.sbp.msg.MsgPosLLH;
-import com.swiftnav.sbp.msg.MsgPrint;
-import com.swiftnav.sbp.msg.SBPMessage;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
-import java.util.LinkedList;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
 	String TAG = "PiksiDroid";
 	String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
 	SBPHandler handler = null;
 	PiksiDriver piksi;
-
-	LinkedList<PiksiPoint> allPiksiPoints = new LinkedList<>();
-	LinkedList<Polyline> allPiksiPolylines = new LinkedList<>();
 
 	@Override
 	protected void onStart() {
@@ -70,6 +57,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		this.setupUI();
 
 		UsbManager mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
 		PendingIntent mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
@@ -83,10 +72,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 		for (UsbDevice device : deviceList.values()) {
 			if ((device.getVendorId() == Utils.PIKSI_VID) && (device.getProductId() == Utils.PIKSI_PID))
-				mUsbManager.requestPermission(device, mPermissionIntent);
+				if (!mUsbManager.hasPermission(device)){
+					mUsbManager.requestPermission(device, mPermissionIntent);
+				}
+				else {
+					((EditText) findViewById(R.id.console)).setText("");
+					new piksiTask(getApplicationContext(), device).execute();
+				}
 		}
-
-		this.setupUI();
 	}
 
 	@Override
@@ -95,34 +88,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		unregisterReceiver(mUsbReceiver);
 		unregisterReceiver(mUsbReceiverDisconnect);
 	}
-
-	public SBPCallback printCallback = new SBPCallback() {
-		@Override
-		public void receiveCallback(SBPMessage msg) {
-			MsgPrint msgPrint = null;
-			try {
-				msgPrint = new MsgPrint(msg);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			final MsgPrint message = msgPrint;
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					EditText console = (EditText) findViewById(R.id.console);
-					final ScrollView sv = (ScrollView) findViewById(R.id.scrollView);
-					console.append(message.text);
-					final EditText c = console;
-					sv.post(new Runnable() {
-						@Override
-						public void run() {
-							sv.smoothScrollTo(0, c.getBottom());
-						}
-					});
-				}
-			});
-		}
-	};
 
 	@Override
 	public void onMapReady(GoogleMap gMap) {
@@ -135,9 +100,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 	public class piksiTask extends AsyncTask<Void, Void, Long> {
 		private Context mContext;
+		private UsbDevice mUsbPiksi;
 
-		public piksiTask(Context context) {
+		public piksiTask(Context context, UsbDevice piksi) {
 			mContext = context;
+			mUsbPiksi = piksi;
 		}
 
 		@Override
@@ -148,7 +115,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 				piksi = null;
 			}
 			try {
-				piksi = new PiksiDriver(mContext);
+				piksi = new PiksiDriver(mContext, mUsbPiksi);
 			} catch (IOException e) {
 				Log.d(TAG, e.toString());
 				e.printStackTrace();
@@ -163,13 +130,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 			} catch (Exception e) {
 				Log.e(TAG, "Error opening JSON log file: " + e.toString());
 			}
-			handler.add_callback(SBPMessage.SBP_MSG_PRINT, printCallback);
-			handler.add_callback(SBPMessage.SBP_MSG_POS_LLH, llhCallback);
 
-			((ObservationFragment)getFragmentManager().findFragmentById(R.id.observation_fragment))
-					.connectPiksi(handler);
+			((ConsoleFragment)getFragmentManager().findFragmentById(R.id.console_fragment))
+					.fixFragment(handler);
 			((TrackingFragment)getFragmentManager().findFragmentById(R.id.tracking_fragment))
 					.fixFragment(handler);
+			((MapFragment)getFragmentManager().findFragmentById(R.id.map_fragment))
+					.fixFragment(handler);
+			((ObservationFragment)getFragmentManager().findFragmentById(R.id.observation_fragment))
+					.connectPiksi(handler);
+
 			Log.d(TAG, "All ready to go...");
 
 			handler.start();
@@ -186,7 +156,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 					if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
 						if (device != null) {
 							((EditText) findViewById(R.id.console)).setText("");
-							new piksiTask(context).execute();
+							new piksiTask(context, device).execute();
 						}
 					} else {
 						Log.d(TAG, "Permission denied for device " + device);
@@ -240,9 +210,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 
 		((EditText) findViewById(R.id.console)).setText("Piksi not connected!");
-		MapFragment mapFragment = (MapFragment) getFragmentManager()
-				.findFragmentById(R.id.map_fragment);
-		mapFragment.getMapAsync(this);
+		((EditText) findViewById(R.id.console)).setTextIsSelectable(false);
+		((EditText) findViewById(R.id.console)).setClickable(false);
+
+		((ScrollView) findViewById(R.id.scrollView)).setClickable(false);
+		((ScrollView) findViewById(R.id.scrollView)).setFocusable(false);
+		((ScrollView) findViewById(R.id.scrollView)).setOnTouchListener(null);
+		((ScrollView) findViewById(R.id.scrollView)).setPressed(false);
+
+		com.swiftnav.piksidroid.MapFragment mFrag = ((com.swiftnav.piksidroid.MapFragment) getFragmentManager().findFragmentById(R.id.map_fragment));
+		com.google.android.gms.maps.MapFragment mGFrag = (com.google.android.gms.maps.MapFragment)mFrag.getChildFragmentManager().findFragmentById(R.id.gmap_fragment);
+		mGFrag.getMapAsync(mFrag);
 	}
 
 	public void showToast(final String message) {
@@ -256,56 +234,4 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 					  }
 		);
 	}
-
-
-	public SBPCallback llhCallback = new SBPCallback() {
-		@Override
-		public void receiveCallback(SBPMessage msg) {
-			MsgPosLLH posLLH = null;
-			try {
-				posLLH = new MsgPosLLH(msg);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			final double lat = posLLH.lat;
-			final double lon = posLLH.lon;
-
-			synchronized (allPiksiPoints) {
-				allPiksiPoints.add(new PiksiPoint(lat, lon));
-			}
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					MapFragment mapFragment = (MapFragment) getFragmentManager()
-							.findFragmentById(R.id.map_fragment);
-					GoogleMap gMap = mapFragment.getMap();
-					synchronized (allPiksiPoints) {
-						if (allPiksiPoints.size() > 2) {
-							LatLng from = allPiksiPoints.get(allPiksiPoints.size() - 1).getLatLng();
-							LatLng to = allPiksiPoints.get(allPiksiPoints.size() - 2).getLatLng();
-							Polyline line = gMap.addPolyline(
-									new PolylineOptions()
-											.add(from)
-											.add(to).width(2)
-											.color(Color.RED));
-							allPiksiPolylines.add(line);
-							CameraPosition cameraPosition = new CameraPosition.Builder()
-									.target(to)
-									.zoom(18)
-									.build();
-							gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-							if (allPiksiPolylines.size() > Utils.LASTLINES) {
-								Polyline rLine = allPiksiPolylines.get(0);
-								rLine.remove();
-
-								allPiksiPoints.remove(0);
-								allPiksiPoints.remove(1);
-								allPiksiPolylines.remove(0);
-							}
-						}
-					}
-				}
-			});
-		}
-	};
 }

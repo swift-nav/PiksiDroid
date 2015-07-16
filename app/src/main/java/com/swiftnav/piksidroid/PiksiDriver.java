@@ -14,6 +14,7 @@
 package com.swiftnav.piksidroid;
 
 import android.content.Context;
+import android.hardware.usb.UsbDevice;
 
 import com.ftdi.j2xx.D2xxManager;
 import com.ftdi.j2xx.FT_Device;
@@ -27,11 +28,14 @@ import java.io.IOException;
 public class PiksiDriver implements SBPDriver {
 	FT_Device piksi = null;
 	String TAG = "PiksiDriver";
+	int tries = 10;
 
 
-	public PiksiDriver(Context context) throws IOException {
+	public PiksiDriver(Context context, UsbDevice usbPiksi) throws IOException {
 		D2xxManager d2xx = D2xxManager.getInstance(context);
 		int devCount;
+		int currentTries = 0;
+
 		devCount = d2xx.createDeviceInfoList(context);
 		D2xxManager.FtDeviceInfoListNode[] devList = new D2xxManager.FtDeviceInfoListNode[devCount];
 		d2xx.getDeviceInfoList(devCount, devList);
