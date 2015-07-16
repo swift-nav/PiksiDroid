@@ -211,8 +211,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 					tmpDataSet.setDrawCircles(false);
 					tmpDataSet.setDrawCircleHole(false);
 					tmpDataSet.setDrawCubic(false);
-					tmpDataSet.setLineWidth(2f);
+					tmpDataSet.setLineWidth(1f);
 					tmpDataSet.setDrawValues(false);
+					tmpDataSet.setColor(Utils.COLOR_LIST[i]);
 					dataSets.add(tmpDataSet);
 				}
 			} else {
@@ -221,36 +222,27 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 					for (int i = 0; i < len; i++) {
 						MsgTrackingState.TrackingChannelState chanState = track.states[i];
 						float cn0 = chanState.cn0;
-						int running = chanState.state;
-						int prn = chanState.prn;
-						ArrayList<Entry> cEntries = chanEntries.get(i);
 
-						if (cEntries.size() > 99) {
-							for (int pos = 0; pos < 99; pos++) {
-								Entry tmp = cEntries.get(pos + 1);
-								tmp.setXIndex(pos);
-								cEntries.set(pos, tmp);
+						LineDataSet tmpDataSet = dataSets.get(i);
+						if (tmpDataSet.getEntryCount() == 100) {
+							for (int j = 0; j < 100; j += 1) {
+								Entry current = tmpDataSet.getEntryForXIndex(j);
+								Entry next = tmpDataSet.getEntryForXIndex(j + 1);
+								current.setVal(next.getVal());
 							}
-							Entry e = new Entry(cn0, cEntries.size());
-							cEntries.set(99, e);
-						} else {
-							Entry e = new Entry(cn0, cEntries.size());
-							cEntries.add(e);
+							tmpDataSet.getEntryForXIndex(99).setVal(cn0);
 						}
-						dataSets.set(i, new LineDataSet(cEntries, "Chan " + i));
-						LineDataSet tmpLine = dataSets.get(i);
-
-						tmpLine.setAxisDependency(YAxis.AxisDependency.LEFT);
-						tmpLine.setDrawCircles(false);
-						tmpLine.setDrawCircleHole(false);
-						tmpLine.setDrawCubic(false);
-						tmpLine.setLineWidth(1f);
-						tmpLine.setDrawValues(false);
-						tmpLine.setColor(Utils.COLOR_LIST[i]);
+						else {
+							Entry e = new Entry(cn0, tmpDataSet.getEntryCount());
+							tmpDataSet.addEntry(e);
+						}
 					}
+
 					final ArrayList<LineDataSet> fDataSets = dataSets;
 					final ArrayList<String> fxVals = xVals;
+
 					chart.release();
+
 					runOnUiThread(new Runnable() {
 						@Override
 						public void run() {
