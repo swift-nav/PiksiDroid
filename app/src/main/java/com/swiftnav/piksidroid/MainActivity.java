@@ -30,13 +30,6 @@ import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.Toast;
 
-import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.Legend;
-import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.components.YAxis;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
-import com.github.mikephil.charting.data.LineDataSet;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -50,32 +43,23 @@ import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.loggers.JSONLogger;
 import com.swiftnav.sbp.msg.MsgPosLLH;
 import com.swiftnav.sbp.msg.MsgPrint;
-import com.swiftnav.sbp.msg.MsgTrackingState;
 import com.swiftnav.sbp.msg.SBPMessage;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.concurrent.Semaphore;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
 	String TAG = "PiksiDroid";
 	String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
 	SBPHandler handler = null;
 	PiksiDriver piksi;
+
 	LinkedList<PiksiPoint> allPiksiPoints = new LinkedList<>();
 	LinkedList<Polyline> allPiksiPolylines = new LinkedList<>();
-	ArrayList<ArrayList<Entry>> chanEntries = new ArrayList<>();
-	ArrayList<String> xVals = new ArrayList<String>();
-	ArrayList<Entry> valsChan1 = new ArrayList<>();
-	ArrayList<LineDataSet> dataSets = new ArrayList<>();
-	int msgCount = 0;
-	Boolean firstTrackingMessage = true;
-	Semaphore chart = new Semaphore(1);
 
 	@Override
 	protected void onStart() {
@@ -140,134 +124,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		}
 	};
 
-	public SBPCallback llhCallback = new SBPCallback() {
-		@Override
-		public void receiveCallback(SBPMessage msg) {
-			MsgPosLLH posLLH = null;
-			try {
-				posLLH = new MsgPosLLH(msg);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			final double lat = posLLH.lat;
-			final double lon = posLLH.lon;
-
-			synchronized (allPiksiPoints) {
-				allPiksiPoints.add(new PiksiPoint(lat, lon));
-			}
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					MapFragment mapFragment = (MapFragment) getFragmentManager()
-							.findFragmentById(R.id.map_fragment);
-					GoogleMap gMap = mapFragment.getMap();
-					synchronized (allPiksiPoints) {
-						if (allPiksiPoints.size() > 2) {
-							LatLng from = allPiksiPoints.get(allPiksiPoints.size() - 1).getLatLng();
-							LatLng to = allPiksiPoints.get(allPiksiPoints.size() - 2).getLatLng();
-							Polyline line = gMap.addPolyline(
-									new PolylineOptions()
-											.add(from)
-											.add(to).width(2)
-											.color(Color.RED));
-							allPiksiPolylines.add(line);
-							CameraPosition cameraPosition = new CameraPosition.Builder()
-									.target(to)
-									.zoom(18)
-									.build();
-							gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-							if (allPiksiPolylines.size() > Utils.LASTLINES) {
-								Polyline rLine = allPiksiPolylines.get(0);
-								rLine.remove();
-
-								allPiksiPoints.remove(0);
-								allPiksiPoints.remove(1);
-								allPiksiPolylines.remove(0);
-							}
-						}
-					}
-				}
-			});
-		}
-	};
-
-	public SBPCallback trackingCallback = new SBPCallback() {
-		@Override
-		public void receiveCallback(SBPMessage msg) {
-			MsgTrackingState track = null;
-			try {
-				track = new MsgTrackingState(msg);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-			int len = track.states.length;
-			if (firstTrackingMessage) {
-				firstTrackingMessage = false;
-				for (int i = 0; i < len; i++) {
-					chanEntries.add(new ArrayList<Entry>());
-					LineDataSet tmpDataSet = new LineDataSet(chanEntries.get(i), "Chan " + i);
-					tmpDataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
-					tmpDataSet.setDrawCircles(false);
-					tmpDataSet.setDrawCircleHole(false);
-					tmpDataSet.setDrawCubic(false);
-					tmpDataSet.setLineWidth(1f);
-					tmpDataSet.setDrawValues(false);
-					tmpDataSet.setColor(Utils.COLOR_LIST[i]);
-					dataSets.add(tmpDataSet);
-				}
-			} else {
-				try {
-					chart.acquire();
-					for (int i = 0; i < len; i++) {
-						MsgTrackingState.TrackingChannelState chanState = track.states[i];
-						float cn0 = chanState.cn0;
-
-						LineDataSet tmpDataSet = dataSets.get(i);
-						if (tmpDataSet.getEntryCount() == 100) {
-							for (int j = 0; j < 100; j += 1) {
-								Entry current = tmpDataSet.getEntryForXIndex(j);
-								Entry next = tmpDataSet.getEntryForXIndex(j + 1);
-								current.setVal(next.getVal());
-							}
-							tmpDataSet.getEntryForXIndex(99).setVal(cn0);
-						}
-						else {
-							Entry e = new Entry(cn0, tmpDataSet.getEntryCount());
-							tmpDataSet.addEntry(e);
-						}
-					}
-
-					final ArrayList<LineDataSet> fDataSets = dataSets;
-					final ArrayList<String> fxVals = xVals;
-
-					chart.release();
-
-					runOnUiThread(new Runnable() {
-						@Override
-						public void run() {
-							try {
-								chart.acquire();
-								LineData data = new LineData(fxVals, fDataSets);
-								LineChart mLineChart = ((LineChart) findViewById(R.id.tracking_chart));
-								mLineChart.setData(data);
-								mLineChart.invalidate();
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							} finally {
-								chart.release();
-							}
-						}
-					});
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				} finally {
-
-				}
-			}
-		}
-
-	};
+	@Override
+	public void onMapReady(GoogleMap gMap) {
+		CameraPosition cameraPosition = new CameraPosition.Builder()
+				.target(Utils.SWIFT_COORD)
+				.zoom(18)
+				.build();
+		gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+	}
 
 	public class piksiTask extends AsyncTask<Void, Void, Long> {
 		private Context mContext;
@@ -301,10 +165,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 			}
 			handler.add_callback(SBPMessage.SBP_MSG_PRINT, printCallback);
 			handler.add_callback(SBPMessage.SBP_MSG_POS_LLH, llhCallback);
-			handler.add_callback(SBPMessage.SBP_MSG_TRACKING_STATE, trackingCallback);
 
 			((ObservationFragment)getFragmentManager().findFragmentById(R.id.observation_fragment))
 					.connectPiksi(handler);
+			((TrackingFragment)getFragmentManager().findFragmentById(R.id.tracking_fragment))
+					.fixFragment(handler);
 			Log.d(TAG, "All ready to go...");
 
 			handler.start();
@@ -373,41 +238,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		tabSpec.setIndicator("Observation");
 		tabHost.addTab(tabSpec);
 
+
+		((EditText) findViewById(R.id.console)).setText("Piksi not connected!");
 		MapFragment mapFragment = (MapFragment) getFragmentManager()
 				.findFragmentById(R.id.map_fragment);
 		mapFragment.getMapAsync(this);
-
-		((EditText) findViewById(R.id.console)).setText("Piksi not connected!");
-
-		LineChart mLineChart = (LineChart) findViewById(R.id.tracking_chart);
-		Legend mLegend = mLineChart.getLegend();
-		XAxis bottomAxis = mLineChart.getXAxis();
-		YAxis rightAxis = mLineChart.getAxisRight();
-		YAxis leftAxis = mLineChart.getAxisLeft();
-
-		mLineChart.setHardwareAccelerationEnabled(true);
-		mLineChart.setTouchEnabled(false);
-		mLineChart.setDescription("");
-		mLineChart.setDescriptionColor(Color.DKGRAY);
-		mLegend.setPosition(Legend.LegendPosition.BELOW_CHART_CENTER);
-		mLegend.setTextColor(Color.WHITE);
-		mLegend.setTextSize(9f);
-		mLegend.setEnabled(true);
-		bottomAxis.setEnabled(false);
-		leftAxis.setTextColor(Color.WHITE);
-		rightAxis.setTextColor(Color.WHITE);
-
-		for (int i = 0; i < 100; i++)
-			xVals.add("" + i);
-	}
-
-	@Override
-	public void onMapReady(GoogleMap gMap) {
-		CameraPosition cameraPosition = new CameraPosition.Builder()
-				.target(Utils.SWIFT_COORD)
-				.zoom(18)
-				.build();
-		gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 	}
 
 	public void showToast(final String message) {
@@ -421,4 +256,56 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 					  }
 		);
 	}
+
+
+	public SBPCallback llhCallback = new SBPCallback() {
+		@Override
+		public void receiveCallback(SBPMessage msg) {
+			MsgPosLLH posLLH = null;
+			try {
+				posLLH = new MsgPosLLH(msg);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			final double lat = posLLH.lat;
+			final double lon = posLLH.lon;
+
+			synchronized (allPiksiPoints) {
+				allPiksiPoints.add(new PiksiPoint(lat, lon));
+			}
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					MapFragment mapFragment = (MapFragment) getFragmentManager()
+							.findFragmentById(R.id.map_fragment);
+					GoogleMap gMap = mapFragment.getMap();
+					synchronized (allPiksiPoints) {
+						if (allPiksiPoints.size() > 2) {
+							LatLng from = allPiksiPoints.get(allPiksiPoints.size() - 1).getLatLng();
+							LatLng to = allPiksiPoints.get(allPiksiPoints.size() - 2).getLatLng();
+							Polyline line = gMap.addPolyline(
+									new PolylineOptions()
+											.add(from)
+											.add(to).width(2)
+											.color(Color.RED));
+							allPiksiPolylines.add(line);
+							CameraPosition cameraPosition = new CameraPosition.Builder()
+									.target(to)
+									.zoom(18)
+									.build();
+							gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+							if (allPiksiPolylines.size() > Utils.LASTLINES) {
+								Polyline rLine = allPiksiPolylines.get(0);
+								rLine.remove();
+
+								allPiksiPoints.remove(0);
+								allPiksiPoints.remove(1);
+								allPiksiPolylines.remove(0);
+							}
+						}
+					}
+				}
+			});
+		}
+	};
 }

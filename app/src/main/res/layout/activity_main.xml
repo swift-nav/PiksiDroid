@@ -62,17 +62,10 @@
                         android:gravity="center"/>
                 </LinearLayout>
 
-                <LinearLayout
-                    android:id="@+id/tracking"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                    <com.github.mikephil.charting.charts.LineChart
-                        android:id="@+id/tracking_chart"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
-                </LinearLayout>
+                <fragment android:name="com.swiftnav.piksidroid.TrackingFragment"
+                          android:id="@+id/tracking_fragment"
+                          android:layout_height="match_parent"
+                          android:layout_width="match_parent"/>
 
                 <LinearLayout
                     android:id="@+id/map"
@@ -85,7 +78,6 @@
                               android:layout_width="match_parent"
                               android:layout_height="match_parent"/>
                 </LinearLayout>
-
                 <LinearLayout
                     android:id="@+id/observation"
                     android:layout_width="match_parent"
