@@ -1,7 +1,8 @@
-package com.swiftnav.sbp.drivers;
+package com.swiftnav.piksidroid;
 
 import android.util.Log;
 
+import com.swiftnav.piksidroid.HexDump;
 import com.swiftnav.sbp.client.SBPDriver;
 
 import java.io.IOException;
@@ -13,7 +14,7 @@ import java.util.Arrays;
 
 public class SBPDriverUDP implements SBPDriver {
     static final String TAG = "SBPDriverUDP";
-    static final int RECV_SIZE = 256;
+    static final int RECV_SIZE = 65535;
     static final int DGRAM_PORT = 2000;
     DatagramSocket socket;
     String server;
@@ -22,6 +23,16 @@ public class SBPDriverUDP implements SBPDriver {
     public SBPDriverUDP(String server_) {
         server = server_;
         rxdata = new byte[0];
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    openSocket();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     @Override
@@ -36,6 +47,7 @@ public class SBPDriverUDP implements SBPDriver {
             bb.put(rxdata);
             bb.put(packet.getData(), rxdata.length, packet.getLength());
             rxdata = bb.array();
+            Log.d(TAG, HexDump.dumpHexString(rxdata));
         }
         byte[] ret = Arrays.copyOf(rxdata, len);
         rxdata = Arrays.copyOfRange(rxdata, len, rxdata.length - len);
@@ -55,6 +67,8 @@ public class SBPDriverUDP implements SBPDriver {
         try {
             socket = new DatagramSocket();
             socket.connect(InetAddress.getByName(server), DGRAM_PORT);
+            socket.send(new DatagramPacket(new byte[]{1, 2, 3}, 3));
+            Log.d(TAG, "Sent junk");
         } catch (Exception e) {
             Log.e(TAG, "Failed to setup socket");
             e.printStackTrace();
