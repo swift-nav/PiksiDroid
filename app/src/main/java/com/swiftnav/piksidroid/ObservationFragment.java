@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.swiftnav.sbp.client.SBPCallback;
+import com.swiftnav.sbp.client.SBPDriver;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.SBPMessage;
 import com.swiftnav.sbp.logging.MsgPrint;
@@ -40,7 +41,7 @@ public class ObservationFragment extends Fragment {
     Button obs_button;
     EditText obs_address;
 
-    SBPDriverUDP driver;
+    SBPDriver driver;
     SBPHandler piksiHandler;
     SBPHandler handler;
 
@@ -62,7 +63,7 @@ public class ObservationFragment extends Fragment {
         obs_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                driver = new SBPDriverUDP(obs_address.getText().toString());
+                driver = new SBPDriverTCP(obs_address.getText().toString(), 2000);
                 handler = new SBPHandler(driver);
                 handler.add_callback(OBS_MESSAGE_LIST, new SBPCallback() {
                     @Override
@@ -94,7 +95,7 @@ public class ObservationFragment extends Fragment {
                     try {
                         handler.send(msg);
                     } catch (IOException e) {
-                        Log.e(TAG, "Failed to send observation on UDP: " + e.toString());
+                        Log.e(TAG, "Failed to send observation to network: " + e.toString());
                         e.printStackTrace();
                     }
             }

@@ -14,14 +14,15 @@ import java.util.Arrays;
 public class SBPDriverUDP implements SBPDriver {
     static final String TAG = "SBPDriverUDP";
     static final int RECV_SIZE = 65535;
-    static final int DGRAM_PORT = 2000;
-    DatagramSocket socket;
-    String server;
+    private DatagramSocket socket;
+    private String server;
+    private int port;
     byte[] rxdata;
 
-    public SBPDriverUDP(String server_) {
+    public SBPDriverUDP(String server_, int port_) {
         server = server_;
         rxdata = new byte[0];
+        port = port_;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -64,7 +65,7 @@ public class SBPDriverUDP implements SBPDriver {
     private void openSocket() throws IOException {
         try {
             socket = new DatagramSocket();
-            socket.connect(InetAddress.getByName(server), DGRAM_PORT);
+            socket.connect(InetAddress.getByName(server), port);
             socket.send(new DatagramPacket(new byte[]{1, 2, 3}, 3));
             Log.d(TAG, "Sent junk");
         } catch (Exception e) {
