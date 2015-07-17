@@ -1,6 +1,5 @@
 package com.swiftnav.piksidroid;
 
-
 import android.os.Bundle;
 import android.app.Fragment;
 import android.util.Log;
@@ -13,7 +12,6 @@ import android.widget.EditText;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.SBPMessage;
-import com.swiftnav.sbp.drivers.SBPDriverUDP;
 import com.swiftnav.sbp.logging.MsgPrint;
 import com.swiftnav.sbp.observation.MsgBasePos;
 import com.swiftnav.sbp.observation.MsgEphemeris;
@@ -77,7 +75,7 @@ public class ObservationFragment extends Fragment {
                         }
                     }
                 });
-
+                handler.start();
             }
         });
 

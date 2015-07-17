@@ -43,14 +43,13 @@ public class SBPDriverUDP implements SBPDriver {
         while (rxdata.length < len) {
             DatagramPacket packet = new DatagramPacket(new byte[RECV_SIZE], RECV_SIZE);
             socket.receive(packet);
-            ByteBuffer bb = ByteBuffer.wrap(new byte[rxdata.length + packet.getLength()]);
+            ByteBuffer bb = ByteBuffer.allocate(rxdata.length + packet.getLength());
             bb.put(rxdata);
-            bb.put(packet.getData(), rxdata.length, packet.getLength());
+            bb.put(packet.getData(), 0, packet.getLength());
             rxdata = bb.array();
-            Log.d(TAG, HexDump.dumpHexString(rxdata));
         }
         byte[] ret = Arrays.copyOf(rxdata, len);
-        rxdata = Arrays.copyOfRange(rxdata, len, rxdata.length - len);
+        rxdata = Arrays.copyOfRange(rxdata, len, rxdata.length);
         return ret;
     }
 
