@@ -21,76 +21,60 @@ public class SBPDriverTCP implements SBPDriver {
     private Socket socket;
     private String server;
     private int port;
-    private Semaphore sem;
 
     public SBPDriverTCP(String server_, int port_) {
         server = server_;
         port = port_;
-        sem = new Semaphore(1);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    sem.acquire();
-                    openSocket();
-                    sem.release();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
     }
 
     @Override
     public byte[] read(int len) throws IOException {
-
-        try {
-            sem.acquire();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         byte[] ret = new byte[len];
         int i = 0;
+
+        synchronized (this) {
+            if (socket == null)
+                openSocket();
+        }
+
         while (i < len) {
             try {
                 if (!socket.isConnected()) {
                     Log.e(TAG, "Socket not connected");
                 }
                 int count = socket.getInputStream().read(ret, i, len - i);
+                if (count < 0) {
+                    throw new IOException("socket.read() returned negative");
+                }
                 i += count;
             } catch (Exception e) {
                 Log.e(TAG, "Error reading from socket: " + e.toString());
                 e.printStackTrace();
+                throw e;
             }
 
         }
-        sem.release();
         return ret;
     }
 
     @Override
     public void write(byte[] data) throws IOException {
-        try {
-            sem.acquire();
-            if (!socket.isConnected()) {
-                Log.e(TAG, "Socket not connected");
-            }
-            socket.getOutputStream().write(data);
-            sem.release();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        synchronized (this) {
+            if (socket == null)
+                openSocket();
         }
+
+        if (!socket.isConnected()) {
+            Log.e(TAG, "Socket not connected");
+            throw new IOException("socket not connected");
+        }
+
+        socket.getOutputStream().write(data);
     }
 
     private void openSocket() throws IOException {
-        try {
-            socket = new Socket();
-            SocketAddress addr = new InetSocketAddress(InetAddress.getByName(server), port);
-            socket.connect(addr, port);
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to setup socket");
-            e.printStackTrace();
-        }
+        socket = new Socket();
+        SocketAddress addr = new InetSocketAddress(InetAddress.getByName(server), port);
+        socket.connect(addr, port);
     }
-
 }
