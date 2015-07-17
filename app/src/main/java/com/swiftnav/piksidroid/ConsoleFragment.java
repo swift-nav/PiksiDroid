@@ -56,6 +56,8 @@ public class ConsoleFragment extends Fragment {
 				public void run() {
 					EditText console = (EditText) getActivity().findViewById(R.id.console);
 					final ScrollView sv = (ScrollView) getActivity().findViewById(R.id.scrollView);
+					if (console.getLineCount() > 100)
+						console.setText("");
 					console.append(message.text);
 					final EditText c = console;
 					sv.post(new Runnable() {
