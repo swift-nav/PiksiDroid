@@ -14,9 +14,13 @@ import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.SBPMessage;
 import com.swiftnav.sbp.drivers.SBPDriverUDP;
+import com.swiftnav.sbp.logging.MsgPrint;
 import com.swiftnav.sbp.observation.MsgBasePos;
 import com.swiftnav.sbp.observation.MsgEphemeris;
+import com.swiftnav.sbp.observation.MsgEphemerisDepA;
+import com.swiftnav.sbp.observation.MsgEphemerisDepB;
 import com.swiftnav.sbp.observation.MsgObs;
+import com.swiftnav.sbp.observation.MsgObsDepA;
 
 import java.io.IOException;
 
@@ -29,7 +33,11 @@ public class ObservationFragment extends Fragment {
     static final int[] OBS_MESSAGE_LIST = {
             MsgBasePos.TYPE,
             MsgObs.TYPE,
-            MsgEphemeris.TYPE};
+            MsgObsDepA.TYPE,
+            MsgEphemeris.TYPE,
+            MsgEphemerisDepA.TYPE,
+            MsgEphemerisDepB.TYPE,
+            MsgPrint.TYPE};
 
     View view;
     Button obs_button;
