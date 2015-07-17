@@ -187,7 +187,7 @@ public class TrackingFragment extends Fragment {
 						BarData barData = new BarData(xValsBar, barDataSets);
 						LineChart mLineChart = ((LineChart)view.findViewById(R.id.tracking_line_chart));
 						BarChart mBarChart = ((BarChart)view.findViewById(R.id.tracking_bar_chart));
-// 						Log.d("PiksiDroid", mBarChart.getBarData().toString());
+
 						try {
 							mLineChart.setData(lineData);
 							mBarChart.setData(barData);

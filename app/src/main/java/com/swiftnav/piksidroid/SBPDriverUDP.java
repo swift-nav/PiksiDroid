@@ -2,7 +2,6 @@ package com.swiftnav.piksidroid;
 
 import android.util.Log;
 
-import com.swiftnav.piksidroid.HexDump;
 import com.swiftnav.sbp.client.SBPDriver;
 
 import java.io.IOException;

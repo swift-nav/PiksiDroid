@@ -70,6 +70,7 @@ public class ObservationFragment extends Fragment {
                     public void receiveCallback(SBPMessage msg) {
                         try {
                             piksiHandler.send(msg);
+							Log.d(TAG, "" + msg.type);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
