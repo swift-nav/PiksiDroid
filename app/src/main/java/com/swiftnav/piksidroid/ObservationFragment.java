@@ -12,8 +12,11 @@ import android.widget.EditText;
 
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
-import com.swiftnav.sbp.msg.SBPMessage;
+import com.swiftnav.sbp.SBPMessage;
 import com.swiftnav.sbp.drivers.SBPDriverUDP;
+import com.swiftnav.sbp.observation.MsgBasePos;
+import com.swiftnav.sbp.observation.MsgEphemeris;
+import com.swiftnav.sbp.observation.MsgObs;
 
 import java.io.IOException;
 
@@ -24,10 +27,10 @@ import java.io.IOException;
 public class ObservationFragment extends Fragment {
     static final String TAG = "ObservationFragment";
     static final int[] OBS_MESSAGE_LIST = {
-            SBPMessage.SBP_MSG_BASE_POS,
-            SBPMessage.SBP_MSG_OBS,
-            SBPMessage.SBP_MSG_EPHEMERIS,
-            SBPMessage.SBP_MSG_PRINT};
+            MsgBasePos.TYPE,
+            MsgObs.TYPE,
+            MsgEphemeris.TYPE};
+
     View view;
     Button obs_button;
     EditText obs_address;
@@ -50,6 +53,7 @@ public class ObservationFragment extends Fragment {
         piksiHandler = ((MainActivity)getActivity()).handler;
         obs_button = (Button) view.findViewById(R.id.obs_connect);
         obs_address = (EditText) view.findViewById(R.id.obs_address);
+
         obs_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

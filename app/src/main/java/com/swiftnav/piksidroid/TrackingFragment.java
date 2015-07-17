@@ -20,8 +20,8 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
-import com.swiftnav.sbp.msg.MsgTrackingState;
-import com.swiftnav.sbp.msg.SBPMessage;
+import com.swiftnav.sbp.SBPMessage;
+import com.swiftnav.sbp.tracking.MsgTrackingStateDepA;
 
 import java.util.ArrayList;
 
@@ -102,20 +102,19 @@ public class TrackingFragment extends Fragment {
 
 	public void fixFragment(SBPHandler handler) {
 		this.piksiHandler = handler;
-		piksiHandler.add_callback(SBPMessage.SBP_MSG_TRACKING_STATE, trackingCallback);
+		piksiHandler.add_callback(MsgTrackingStateDepA.TYPE, trackingCallback);
 	}
 
 	public SBPCallback trackingCallback = new SBPCallback() {
 		@Override
 		public void receiveCallback(SBPMessage msg) {
-			MsgTrackingState t = null;
+			MsgTrackingStateDepA t = null;
 			try {
-				t = new MsgTrackingState(msg);
+				t = new MsgTrackingStateDepA(msg);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			final MsgTrackingState track = t;
-
+			final MsgTrackingStateDepA track = t;
 			getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
@@ -149,7 +148,7 @@ public class TrackingFragment extends Fragment {
 						}
 					} else {
 						for (int i = 0; i < len; i++) {
-							MsgTrackingState.TrackingChannelState chanState = track.states[i];
+							MsgTrackingStateDepA.TrackingChannelStateDepA chanState = track.states[i];
 							float cn0 = chanState.cn0;
 							int state = chanState.state;
 							int prn = chanState.prn;

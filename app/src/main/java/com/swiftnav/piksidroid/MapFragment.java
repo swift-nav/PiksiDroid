@@ -17,8 +17,8 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
-import com.swiftnav.sbp.msg.MsgPosLLH;
-import com.swiftnav.sbp.msg.SBPMessage;
+import com.swiftnav.sbp.navigation.MsgPosLLH;
+import com.swiftnav.sbp.SBPMessage;
 
 import java.util.LinkedList;
 
@@ -48,7 +48,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback{
 
 	public void fixFragment(SBPHandler handler) {
 		this.piksiHandler = handler;
-		piksiHandler.add_callback(SBPMessage.SBP_MSG_POS_LLH, llhCallback);
+		piksiHandler.add_callback(MsgPosLLH.TYPE, llhCallback);
 	}
 
 	@Override

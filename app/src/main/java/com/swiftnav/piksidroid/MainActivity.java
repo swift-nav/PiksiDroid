@@ -38,7 +38,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.swiftnav.sbp.client.SBPHandler;
-import com.swiftnav.sbp.loggers.JSONLogger;
+//import com.swiftnav.sbp.loggers.JSONLogger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -130,7 +130,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 			try {
 				File logfile = new File(getExternalFilesDir("logs"), "logfile");
 				OutputStream logstream = new FileOutputStream(logfile);
-				handler.add_callback(new JSONLogger(logstream));
+				//handler.add_callback(new JSONLogger(logstream));
 			} catch (Exception e) {
 				Log.e(TAG, "Error opening JSON log file: " + e.toString());
 			}
