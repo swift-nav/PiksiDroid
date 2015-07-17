@@ -52,8 +52,9 @@ public class TrackingFragment extends Fragment {
 		for (int i = 0; i < 100; i++)
 			xValsLine.add("" + i);
 
-		for (int i = 0; i < 11; i++)
-			xValsBar.add("" + i);
+		xValsBar.add("");
+		xValsBar.add("");
+
 		setupLineChart();
 		setupBarChart();
 
@@ -72,6 +73,7 @@ public class TrackingFragment extends Fragment {
 		mLegend.setPosition(Legend.LegendPosition.BELOW_CHART_CENTER);
 		mLegend.setTextColor(Color.WHITE);
 		mLegend.setTextSize(4f);
+		mLegend.setYOffset(4f);
 		mLegend.setEnabled(true);
 		bottomAxis.setEnabled(false);
 		leftAxis.setTextColor(Color.WHITE);
@@ -88,10 +90,7 @@ public class TrackingFragment extends Fragment {
 		mBarChart.setHardwareAccelerationEnabled(true);
 		mBarChart.setDescription("");
 		mBarChart.setDrawValuesForWholeStack(true);
-		mBarChart.setDrawHighlightArrow(true);
-		mBarChart.setScaleEnabled(true);
-		mBarChart.setScaleXEnabled(true);
-		mBarChart.setScaleYEnabled(true);
+		mBarChart.setHighlightEnabled(false);
 		mLegend.setPosition(Legend.LegendPosition.BELOW_CHART_CENTER);
 		mLegend.setTextColor(Color.WHITE);
 		mLegend.setTextSize(4f);
@@ -104,7 +103,7 @@ public class TrackingFragment extends Fragment {
 
 	public void fixFragment(SBPHandler handler) {
 		this.piksiHandler = handler;
-		piksiHandler.add_callback(MsgTrackingStateDepA.TYPE, trackingCallback);
+		this.piksiHandler.add_callback(MsgTrackingStateDepA.TYPE, trackingCallback);
 	}
 
 	public SBPCallback trackingCallback = new SBPCallback() {
@@ -128,7 +127,6 @@ public class TrackingFragment extends Fragment {
 						for (int i = 0; i < len; i++) {
 							lineEntries.add(new ArrayList<Entry>());
 							barEntries.add(new ArrayList<BarEntry>());
-							barEntries.get(i).add(new BarEntry(0, i));
 
 							LineDataSet tmpLineDataSet = new LineDataSet(lineEntries.get(i), "Chan " + i);
 							tmpLineDataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
@@ -141,10 +139,8 @@ public class TrackingFragment extends Fragment {
 
 
 							BarDataSet tmpBarDataSet = new BarDataSet(barEntries.get(i), "Chan " + i);
-							tmpBarDataSet.setAxisDependency(YAxis.AxisDependency.RIGHT);
 							tmpBarDataSet.setDrawValues(true);
 							tmpBarDataSet.setColor(Utils.COLOR_LIST[i]);
-							tmpBarDataSet.setBarSpacePercent(40);
 
 							lineDataSets.add(tmpLineDataSet);
 							barDataSets.add(tmpBarDataSet);
@@ -155,16 +151,16 @@ public class TrackingFragment extends Fragment {
 							float cn0 = chanState.cn0;
 							int state = chanState.state;
 							int prn = chanState.prn;
-
-							barEntries.get(i).get(0).setVal(cn0);
-							barEntries.get(i).get(0).setXIndex(i);
+							barEntries.get(i).clear();
 
 							LineDataSet tmpLineDataSet = lineDataSets.get(i);
 							BarDataSet tmpBarDataSet = barDataSets.get(i);
 
+							tmpBarDataSet.addEntry(new BarEntry(cn0, i));
+
 							if (state == 1) {
-								tmpLineDataSet.setLabel("PRN " + prn);
-								tmpBarDataSet.setLabel("PRN " + prn);
+								tmpLineDataSet.setLabel("C-" + i + " PRN " + prn);
+								tmpBarDataSet.setLabel("C-" + i + " PRN " + prn);
 							} else {
 								tmpLineDataSet.setLabel("Chan " + i);;
 								tmpBarDataSet.setLabel("Chan " + i);

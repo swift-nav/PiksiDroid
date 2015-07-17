@@ -8,14 +8,14 @@
         android:id="@+id/piksi"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:layout_gravity="center_vertical">
 
         <ScrollView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:id="@+id/scrollView">
 
-        </ScrollView>
 
         <EditText
             android:layout_width="match_parent"
@@ -28,7 +28,9 @@
             android:cursorVisible="false"
             android:focusable="false"
             android:focusableInTouchMode="false"
-            android:gravity="center"/>
+            android:gravity="center"
+            android:linksClickable="false"/>
+        </ScrollView>
     </LinearLayout>
 
 </FrameLayout>

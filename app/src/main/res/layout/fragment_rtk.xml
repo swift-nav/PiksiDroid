@@ -17,7 +17,8 @@
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Large Text"
             android:id="@+id/n"
-            android:layout_marginBottom="10dp"/>
+            android:layout_marginBottom="10dp"
+            android:visibility="visible"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -25,7 +26,8 @@
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Large Text"
             android:id="@+id/e"
-            android:layout_marginBottom="10dp"/>
+            android:layout_marginBottom="10dp"
+            android:visibility="visible"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -33,7 +35,8 @@
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Large Text"
             android:id="@+id/d"
-            android:layout_marginBottom="10dp"/>
+            android:layout_marginBottom="10dp"
+            android:visibility="visible"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -41,7 +44,8 @@
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Large Text"
             android:id="@+id/tow"
-            android:layout_marginBottom="10dp"/>
+            android:layout_marginBottom="10dp"
+            android:visibility="visible"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -49,14 +53,16 @@
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Large Text"
             android:id="@+id/n_sats"
-            android:layout_marginBottom="10dp"/>
+            android:layout_marginBottom="10dp"
+            android:visibility="visible"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Large Text"
-            android:id="@+id/ff"/>
+            android:id="@+id/ff"
+            android:visibility="visible"/>
     </LinearLayout>
 
 </FrameLayout>

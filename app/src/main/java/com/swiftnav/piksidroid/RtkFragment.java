@@ -2,16 +2,26 @@ package com.swiftnav.piksidroid;
 
 
 import android.app.Fragment;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.github.mikephil.charting.charts.ScatterChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.ScatterData;
+import com.github.mikephil.charting.data.ScatterDataSet;
 import com.swiftnav.sbp.SBPMessage;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.navigation.MsgBaselineNED;
+
+import java.util.ArrayList;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -47,7 +57,6 @@ public class RtkFragment extends Fragment {
 
 		return view;
 	}
-
 
 	public void fixFragment(SBPHandler handler) {
 		piksiHandler = handler;

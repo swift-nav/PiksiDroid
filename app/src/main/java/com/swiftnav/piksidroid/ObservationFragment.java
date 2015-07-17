@@ -1,7 +1,7 @@
 package com.swiftnav.piksidroid;
 
-import android.os.Bundle;
 import android.app.Fragment;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,11 +9,10 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.swiftnav.sbp.SBPMessage;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPDriver;
 import com.swiftnav.sbp.client.SBPHandler;
-import com.swiftnav.sbp.SBPMessage;
-import com.swiftnav.sbp.logging.MsgPrint;
 import com.swiftnav.sbp.observation.MsgBasePos;
 import com.swiftnav.sbp.observation.MsgEphemeris;
 import com.swiftnav.sbp.observation.MsgEphemerisDepA;

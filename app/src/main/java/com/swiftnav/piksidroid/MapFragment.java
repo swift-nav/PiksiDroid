@@ -1,6 +1,5 @@
 package com.swiftnav.piksidroid;
 
-
 import android.graphics.Color;
 import android.os.Bundle;
 import android.app.Fragment;
