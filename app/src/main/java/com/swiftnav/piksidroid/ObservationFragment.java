@@ -73,7 +73,6 @@ public class ObservationFragment extends Fragment {
                         }
                         try {
                             piksiHandler.send(msg);
-							Log.d(TAG, "" + msg.type);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
