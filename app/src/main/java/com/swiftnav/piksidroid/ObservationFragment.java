@@ -34,8 +34,7 @@ public class ObservationFragment extends Fragment {
             MsgObsDepA.TYPE,
             MsgEphemeris.TYPE,
             MsgEphemerisDepA.TYPE,
-            MsgEphemerisDepB.TYPE,
-            MsgPrint.TYPE};
+            MsgEphemerisDepB.TYPE};
 
     View view;
     Button obs_button;
@@ -68,6 +67,10 @@ public class ObservationFragment extends Fragment {
                 handler.add_callback(OBS_MESSAGE_LIST, new SBPCallback() {
                     @Override
                     public void receiveCallback(SBPMessage msg) {
+                        if (piksiHandler == null) {
+                            Log.e(TAG, "No piksi to send to!");
+                            return;
+                        }
                         try {
                             piksiHandler.send(msg);
 							Log.d(TAG, "" + msg.type);
