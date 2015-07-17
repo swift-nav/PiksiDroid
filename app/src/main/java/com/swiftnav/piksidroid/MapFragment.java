@@ -53,7 +53,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback{
 
 	@Override
 	public void onMapReady(GoogleMap googleMap) {
-
+		CameraPosition cameraPosition = new CameraPosition.Builder()
+				.target(Utils.SWIFT_COORD)
+				.zoom(18)
+				.build();
+		googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 	}
 
 	public SBPCallback llhCallback = new SBPCallback() {

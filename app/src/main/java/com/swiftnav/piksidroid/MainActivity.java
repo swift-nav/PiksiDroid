@@ -38,13 +38,14 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.swiftnav.sbp.client.SBPHandler;
-//import com.swiftnav.sbp.loggers.JSONLogger;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
+
+//import com.swiftnav.sbp.loggers.JSONLogger;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
 	String TAG = "PiksiDroid";
@@ -143,6 +144,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 					.fixFragment(handler);
 			((ObservationFragment)getFragmentManager().findFragmentById(R.id.observation_fragment))
 					.connectPiksi(handler);
+			((RtkFragment)getFragmentManager().findFragmentById(R.id.rtk_fragment))
+					.fixFragment(handler);
 
 			Log.d(TAG, "All ready to go...");
 
@@ -212,6 +215,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		tabSpec.setIndicator("Observation");
 		tabHost.addTab(tabSpec);
 
+		tabSpec = tabHost.newTabSpec("RTK");
+		tabSpec.setContent(R.id.rtk);
+		tabSpec.setIndicator("RTK");
+		tabHost.addTab(tabSpec);
+
 		tabHost.setOnTabChangedListener(tabChanger);
 
 		((EditText) findViewById(R.id.console)).setText("Piksi not connected!");
@@ -248,6 +256,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 	public TabHost.OnTabChangeListener tabChanger = new TabHost.OnTabChangeListener() {
 		@Override
 		public void onTabChanged(String tabId) {
+			TrackingFragment mTrack = ((TrackingFragment) getFragmentManager().findFragmentById(R.id.tracking_fragment));
 			if (tabId == "Tracking") {
 				LinearLayout l = ((LinearLayout)findViewById(R.id.tabItemsLayout));
 				Switch barChartSwitch = new Switch(getApplicationContext());
@@ -259,11 +268,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 				barChartSwitch.setOnCheckedChangeListener(swChange);
 
 				l.addView(barChartSwitch);
+
+				mTrack.getView().findViewById(R.id.tracking_line_chart).setVisibility(View.VISIBLE);
+				mTrack.getView().findViewById(R.id.tracking_bar_chart).setVisibility(View.GONE);
 			}
 			else {
 				LinearLayout l = ((LinearLayout)findViewById(R.id.tabItemsLayout));
 				if (l.getChildCount() > 1)
 					l.removeViewAt(1);
+				mTrack.getView().findViewById(R.id.tracking_line_chart).setVisibility(View.GONE);
+				mTrack.getView().findViewById(R.id.tracking_bar_chart).setVisibility(View.VISIBLE);
 			}
 		}
 	};

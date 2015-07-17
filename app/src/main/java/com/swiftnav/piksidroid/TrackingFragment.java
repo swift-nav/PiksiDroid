@@ -18,9 +18,9 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.swiftnav.sbp.SBPMessage;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
-import com.swiftnav.sbp.SBPMessage;
 import com.swiftnav.sbp.tracking.MsgTrackingStateDepA;
 
 import java.util.ArrayList;
@@ -90,6 +90,8 @@ public class TrackingFragment extends Fragment {
 		mBarChart.setDrawValuesForWholeStack(true);
 		mBarChart.setDrawHighlightArrow(true);
 		mBarChart.setScaleEnabled(true);
+		mBarChart.setScaleXEnabled(true);
+		mBarChart.setScaleYEnabled(true);
 		mLegend.setPosition(Legend.LegendPosition.BELOW_CHART_CENTER);
 		mLegend.setTextColor(Color.WHITE);
 		mLegend.setTextSize(4f);
@@ -127,6 +129,7 @@ public class TrackingFragment extends Fragment {
 							lineEntries.add(new ArrayList<Entry>());
 							barEntries.add(new ArrayList<BarEntry>());
 							barEntries.get(i).add(new BarEntry(0, i));
+
 							LineDataSet tmpLineDataSet = new LineDataSet(lineEntries.get(i), "Chan " + i);
 							tmpLineDataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
 							tmpLineDataSet.setDrawCircles(false);
@@ -138,10 +141,10 @@ public class TrackingFragment extends Fragment {
 
 
 							BarDataSet tmpBarDataSet = new BarDataSet(barEntries.get(i), "Chan " + i);
-//							tmpBarDataSet.setAxisDependency(YAxis.AxisDependency.RIGHT);
-//							tmpBarDataSet.setDrawValues(true);
-//							tmpBarDataSet.setColor(Utils.COLOR_LIST[i]);
-//							tmpBarDataSet.setBarSpacePercent(40);
+							tmpBarDataSet.setAxisDependency(YAxis.AxisDependency.RIGHT);
+							tmpBarDataSet.setDrawValues(true);
+							tmpBarDataSet.setColor(Utils.COLOR_LIST[i]);
+							tmpBarDataSet.setBarSpacePercent(40);
 
 							lineDataSets.add(tmpLineDataSet);
 							barDataSets.add(tmpBarDataSet);
@@ -154,7 +157,7 @@ public class TrackingFragment extends Fragment {
 							int prn = chanState.prn;
 
 							barEntries.get(i).get(0).setVal(cn0);
-							barEntries.get(i).get(0).setXIndex(i*i);
+							barEntries.get(i).get(0).setXIndex(i);
 
 							LineDataSet tmpLineDataSet = lineDataSets.get(i);
 							BarDataSet tmpBarDataSet = barDataSets.get(i);
@@ -182,10 +185,9 @@ public class TrackingFragment extends Fragment {
 
 						LineData lineData = new LineData(xValsLine, lineDataSets);
 						BarData barData = new BarData(xValsBar, barDataSets);
-
 						LineChart mLineChart = ((LineChart)view.findViewById(R.id.tracking_line_chart));
 						BarChart mBarChart = ((BarChart)view.findViewById(R.id.tracking_bar_chart));
-
+// 						Log.d("PiksiDroid", mBarChart.getBarData().toString());
 						try {
 							mLineChart.setData(lineData);
 							mBarChart.setData(barData);
