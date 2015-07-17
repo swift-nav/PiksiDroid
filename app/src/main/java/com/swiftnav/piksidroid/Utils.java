@@ -39,6 +39,7 @@ public class Utils {
 			Color.MAGENTA,
 			Color.BLUE
 	};
+
 	public static boolean isOnline() {
 
 		Runtime runtime = Runtime.getRuntime();

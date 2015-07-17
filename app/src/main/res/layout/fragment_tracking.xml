@@ -4,7 +4,6 @@
              android:layout_height="match_parent"
              tools:context="com.swiftnav.piksidroid.TrackingFragment">
 
-
     <LinearLayout
         android:id="@+id/tracking"
         android:layout_width="match_parent"
@@ -12,10 +11,15 @@
         android:orientation="vertical">
 
         <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/tracking_chart"
+            android:id="@+id/tracking_line_chart"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
-    </LinearLayout>
 
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/tracking_bar_chart"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
+    </LinearLayout>
 
 </FrameLayout>

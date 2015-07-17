@@ -34,7 +34,7 @@ public class SBPHandler {
 
         receiveThread.finish();
         try {
-            receiveThread.join(1000);
+            receiveThread.join(100);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

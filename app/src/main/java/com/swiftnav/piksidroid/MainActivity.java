@@ -24,8 +24,12 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.ScrollView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.Switch;
 import android.widget.TabHost;
 import android.widget.Toast;
 
@@ -208,19 +212,25 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		tabSpec.setIndicator("Observation");
 		tabHost.addTab(tabSpec);
 
+		tabHost.setOnTabChangedListener(tabChanger);
 
 		((EditText) findViewById(R.id.console)).setText("Piksi not connected!");
 		((EditText) findViewById(R.id.console)).setTextIsSelectable(false);
-		((EditText) findViewById(R.id.console)).setClickable(false);
+		findViewById(R.id.console).setClickable(false);
 
-		((ScrollView) findViewById(R.id.scrollView)).setClickable(false);
-		((ScrollView) findViewById(R.id.scrollView)).setFocusable(false);
-		((ScrollView) findViewById(R.id.scrollView)).setOnTouchListener(null);
-		((ScrollView) findViewById(R.id.scrollView)).setPressed(false);
+		findViewById(R.id.scrollView).setClickable(false);
+		findViewById(R.id.scrollView).setFocusable(false);
+		findViewById(R.id.scrollView).setOnTouchListener(null);
+		findViewById(R.id.scrollView).setPressed(false);
 
 		com.swiftnav.piksidroid.MapFragment mFrag = ((com.swiftnav.piksidroid.MapFragment) getFragmentManager().findFragmentById(R.id.map_fragment));
 		com.google.android.gms.maps.MapFragment mGFrag = (com.google.android.gms.maps.MapFragment)mFrag.getChildFragmentManager().findFragmentById(R.id.gmap_fragment);
 		mGFrag.getMapAsync(mFrag);
+
+
+		View decorView = getWindow().getDecorView();
+		int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+		decorView.setSystemUiVisibility(uiOptions);
 	}
 
 	public void showToast(final String message) {
@@ -234,4 +244,42 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 					  }
 		);
 	}
+
+	public TabHost.OnTabChangeListener tabChanger = new TabHost.OnTabChangeListener() {
+		@Override
+		public void onTabChanged(String tabId) {
+			if (tabId == "Tracking") {
+				LinearLayout l = ((LinearLayout)findViewById(R.id.tabItemsLayout));
+				Switch barChartSwitch = new Switch(getApplicationContext());
+
+				barChartSwitch.setText("Bar Chart");
+				barChartSwitch.setEnabled(true);
+				RelativeLayout.LayoutParams params  = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+				barChartSwitch.setLayoutParams(params);
+				barChartSwitch.setOnCheckedChangeListener(swChange);
+
+				l.addView(barChartSwitch);
+			}
+			else {
+				LinearLayout l = ((LinearLayout)findViewById(R.id.tabItemsLayout));
+				if (l.getChildCount() > 1)
+					l.removeViewAt(1);
+			}
+		}
+	};
+
+	public CompoundButton.OnCheckedChangeListener swChange = new CompoundButton.OnCheckedChangeListener() {
+		@Override
+		public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+			TrackingFragment mTrack = ((TrackingFragment) getFragmentManager().findFragmentById(R.id.tracking_fragment));
+			if (isChecked) {
+				mTrack.getView().findViewById(R.id.tracking_line_chart).setVisibility(View.GONE);
+				mTrack.getView().findViewById(R.id.tracking_bar_chart).setVisibility(View.VISIBLE);
+			}
+			else {
+				mTrack.getView().findViewById(R.id.tracking_line_chart).setVisibility(View.VISIBLE);
+				mTrack.getView().findViewById(R.id.tracking_bar_chart).setVisibility(View.GONE);
+			}
+		}
+	};
 }
