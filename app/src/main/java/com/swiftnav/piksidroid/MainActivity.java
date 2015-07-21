@@ -20,7 +20,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -31,7 +30,6 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Switch;
 import android.widget.TabHost;
-import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -49,8 +47,8 @@ import java.util.HashMap;
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
 	String TAG = "PiksiDroid";
 	String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
-	SBPHandler handler = null;
-	PiksiDriver piksi;
+	SBPHandler piksiHandler;
+	SBPDriverJ2XX piksiDriver;
 
 	@Override
 	protected void onStart() {
@@ -81,7 +79,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 				}
 				else {
 					((EditText) findViewById(R.id.console)).setText("");
-					new piksiTask(getApplicationContext(), device).execute();
+					piksiConnected(device);
 				}
 		}
 	}
@@ -102,71 +100,57 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 	}
 
-	public class piksiTask extends AsyncTask<Void, Void, Long> {
-		private Context mContext;
-		private UsbDevice mUsbPiksi;
+	private void piksiConnected(UsbDevice usbdev) {
+		if (piksiDriver != null) {
+			piksiHandler.stop();
+			piksiDriver.close();
+			piksiDriver = null;
+		}
+		try {
+			piksiDriver = new SBPDriverJ2XX(this, usbdev);
+		} catch (IOException e) {
+			Log.d(TAG, e.toString());
+			e.printStackTrace();
+			return;
+		}
+		piksiHandler = new SBPHandler(piksiDriver);
 
-		public piksiTask(Context context, UsbDevice piksi) {
-			mContext = context;
-			mUsbPiksi = piksi;
+		try {
+			File logfile = new File(getExternalFilesDir("logs"), "logfile");
+			OutputStream logstream = new FileOutputStream(logfile);
+			piksiHandler.addCallback(new JSONLogger(logstream));
+		} catch (Exception e) {
+			Log.e(TAG, "Error opening JSON log file: " + e.toString());
 		}
 
-		@Override
-		protected Long doInBackground(Void... params) {
-			if (piksi != null) {
-				handler.stop();
-				piksi.close();
-				piksi = null;
-			}
-			try {
-				piksi = new PiksiDriver(mContext, mUsbPiksi);
-			} catch (IOException e) {
-				Log.d(TAG, e.toString());
-				e.printStackTrace();
-				return null;
-			}
-			handler = new SBPHandler(piksi);
+		((ConsoleFragment) getFragmentManager().findFragmentById(R.id.console_fragment))
+				.fixFragment(piksiHandler);
+		((TrackingFragment) getFragmentManager().findFragmentById(R.id.tracking_fragment))
+				.fixFragment(piksiHandler);
+		((MapFragment) getFragmentManager().findFragmentById(R.id.map_fragment))
+				.fixFragment(piksiHandler);
+		((ObservationFragment) getFragmentManager().findFragmentById(R.id.observation_fragment))
+				.connectPiksi(piksiHandler);
+		((RtkFragment) getFragmentManager().findFragmentById(R.id.rtk_fragment))
+				.fixFragment(piksiHandler);
 
-			try {
-				File logfile = new File(getExternalFilesDir("logs"), "logfile");
-				OutputStream logstream = new FileOutputStream(logfile);
-				handler.addCallback(new JSONLogger(logstream));
-			} catch (Exception e) {
-				Log.e(TAG, "Error opening JSON log file: " + e.toString());
-			}
+		Log.d(TAG, "All ready to go...");
 
-			((ConsoleFragment)getFragmentManager().findFragmentById(R.id.console_fragment))
-					.fixFragment(handler);
-			((TrackingFragment)getFragmentManager().findFragmentById(R.id.tracking_fragment))
-					.fixFragment(handler);
-			((MapFragment)getFragmentManager().findFragmentById(R.id.map_fragment))
-					.fixFragment(handler);
-			((ObservationFragment)getFragmentManager().findFragmentById(R.id.observation_fragment))
-					.connectPiksi(handler);
-			((RtkFragment)getFragmentManager().findFragmentById(R.id.rtk_fragment))
-					.fixFragment(handler);
-
-			Log.d(TAG, "All ready to go...");
-
-			handler.start();
-			return null;
-		}
+		piksiHandler.start();
 	}
 
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
 			if (ACTION_USB_PERMISSION.equals(action)) {
-				synchronized (this) {
-					UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-					if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-						if (device != null) {
-							((EditText) findViewById(R.id.console)).setText("");
-							new piksiTask(context, device).execute();
-						}
-					} else {
-						Log.d(TAG, "Permission denied for device " + device);
+				UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+				if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+					if (device != null) {
+						((EditText) findViewById(R.id.console)).setText("");
+						piksiConnected(device);
 					}
+				} else {
+					Log.e(TAG, "Permission denied for device " + device);
 				}
 			}
 		}
@@ -179,10 +163,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 				UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 				if (device != null) {
 					Log.e(TAG, "Device disconnected!");
-					if (piksi != null) {
-						handler.stop();
-						piksi.close();
-						piksi = null;
+					if (piksiDriver != null) {
+						piksiHandler.stop();
+						piksiDriver.close();
+						piksiDriver = null;
 						((EditText) findViewById(R.id.console)).setText("Piksi not connected!");
 					}
 				}
@@ -238,18 +222,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		View decorView = getWindow().getDecorView();
 		int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
 		decorView.setSystemUiVisibility(uiOptions);
-	}
-
-	public void showToast(final String message) {
-		runOnUiThread(new Runnable() {
-						  public void run() {
-							  Context context = getApplicationContext();
-							  int duration = Toast.LENGTH_SHORT;
-							  Toast toast = Toast.makeText(context, message, duration);
-							  toast.show();
-						  }
-					  }
-		);
 	}
 
 	public TabHost.OnTabChangeListener tabChanger = new TabHost.OnTabChangeListener() {

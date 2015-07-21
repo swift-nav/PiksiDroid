@@ -57,7 +57,7 @@ public class ObservationFragment extends Fragment {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_observation, container, false);
 
-        piksiHandler = ((MainActivity)getActivity()).handler;
+        piksiHandler = ((MainActivity)getActivity()).piksiHandler;
         obs_button = (Button) view.findViewById(R.id.obs_connect);
         obs_address = (EditText) view.findViewById(R.id.obs_address);
 
