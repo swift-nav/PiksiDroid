@@ -38,19 +38,13 @@ public class ConsoleFragment extends Fragment {
 
 	public void fixFragment(SBPHandler handler) {
 		this.piksiHandler = handler;
-		piksiHandler.add_callback(MsgPrint.TYPE, printCallback);
+		piksiHandler.addCallback(MsgPrint.TYPE, printCallback);
 	}
 
 	public SBPCallback printCallback = new SBPCallback() {
 		@Override
 		public void receiveCallback(SBPMessage msg) {
-			MsgPrint msgPrint = null;
-			try {
-				msgPrint = new MsgPrint(msg);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			final MsgPrint message = msgPrint;
+			final MsgPrint message = (MsgPrint)msg;
 			getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {

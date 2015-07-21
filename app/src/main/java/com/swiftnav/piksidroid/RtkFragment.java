@@ -2,30 +2,17 @@ package com.swiftnav.piksidroid;
 
 
 import android.app.Fragment;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.github.mikephil.charting.charts.ScatterChart;
-import com.github.mikephil.charting.components.Legend;
-import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.components.YAxis;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.ScatterData;
-import com.github.mikephil.charting.data.ScatterDataSet;
 import com.swiftnav.sbp.SBPMessage;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.navigation.MsgBaselineNED;
 
-import java.util.ArrayList;
-
-/**
- * A simple {@link Fragment} subclass.
- */
 public class RtkFragment extends Fragment {
 	View view;
 	SBPHandler piksiHandler;
@@ -61,23 +48,16 @@ public class RtkFragment extends Fragment {
 	public void fixFragment(SBPHandler handler) {
 		piksiHandler = handler;
 
-		piksiHandler.add_callback(MsgBaselineNED.TYPE, baselineNEDCallback);
+		piksiHandler.addCallback(MsgBaselineNED.TYPE, baselineNEDCallback);
 	}
 
 	public SBPCallback baselineNEDCallback = new SBPCallback() {
 		@Override
-		public void receiveCallback(SBPMessage sbpMessage) {
-			final SBPMessage msg = sbpMessage;
+		public void receiveCallback(SBPMessage msg) {
+			final MsgBaselineNED baselineMsg = (MsgBaselineNED)msg;
 			getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					MsgBaselineNED baselineMsg = null;
-					try {
-						baselineMsg = new MsgBaselineNED(msg);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-
 					int e_ = baselineMsg.e;
 					int n_ = baselineMsg.n;
 					int flag = baselineMsg.flags;

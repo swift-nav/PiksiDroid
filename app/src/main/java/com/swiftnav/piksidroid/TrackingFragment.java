@@ -21,13 +21,11 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.swiftnav.sbp.SBPMessage;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
-import com.swiftnav.sbp.tracking.MsgTrackingStateDepA;
+import com.swiftnav.sbp.tracking.MsgTrackingState;
+import com.swiftnav.sbp.tracking.TrackingChannelState;
 
 import java.util.ArrayList;
 
-/**
- * A simple {@link Fragment} subclass.
- */
 public class TrackingFragment extends Fragment {
 	View view;
 	ArrayList<ArrayList<Entry>> lineEntries = new ArrayList<>();
@@ -103,19 +101,13 @@ public class TrackingFragment extends Fragment {
 
 	public void fixFragment(SBPHandler handler) {
 		this.piksiHandler = handler;
-		this.piksiHandler.add_callback(MsgTrackingStateDepA.TYPE, trackingCallback);
+		this.piksiHandler.addCallback(MsgTrackingState.TYPE, trackingCallback);
 	}
 
 	public SBPCallback trackingCallback = new SBPCallback() {
 		@Override
 		public void receiveCallback(SBPMessage msg) {
-			MsgTrackingStateDepA t = null;
-			try {
-				t = new MsgTrackingStateDepA(msg);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			final MsgTrackingStateDepA track = t;
+			final MsgTrackingState track = (MsgTrackingState)msg;
 			getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
@@ -147,10 +139,10 @@ public class TrackingFragment extends Fragment {
 						}
 					} else {
 						for (int i = 0; i < len; i++) {
-							MsgTrackingStateDepA.TrackingChannelStateDepA chanState = track.states[i];
+							TrackingChannelState chanState = track.states[i];
 							float cn0 = chanState.cn0;
 							int state = chanState.state;
-							int prn = chanState.prn;
+							int prn = (int)(chanState.sid & 0x1F);
 							barEntries.get(i).clear();
 
 							LineDataSet tmpLineDataSet = lineDataSets.get(i);

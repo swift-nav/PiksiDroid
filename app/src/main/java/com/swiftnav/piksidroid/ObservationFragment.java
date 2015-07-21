@@ -13,6 +13,7 @@ import com.swiftnav.sbp.SBPMessage;
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPDriver;
 import com.swiftnav.sbp.client.SBPHandler;
+import com.swiftnav.sbp.drivers.SBPDriverTCP;
 import com.swiftnav.sbp.observation.MsgBasePos;
 import com.swiftnav.sbp.observation.MsgEphemeris;
 import com.swiftnav.sbp.observation.MsgEphemerisDepA;
@@ -21,6 +22,7 @@ import com.swiftnav.sbp.observation.MsgObs;
 import com.swiftnav.sbp.observation.MsgObsDepA;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 
 /**
@@ -28,7 +30,7 @@ import java.io.IOException;
  */
 public class ObservationFragment extends Fragment {
     static final String TAG = "ObservationFragment";
-    static final int[] OBS_MESSAGE_LIST = {
+    static final Integer[] OBS_MESSAGE_LIST = {
             MsgBasePos.TYPE,
             MsgObs.TYPE,
             MsgObsDepA.TYPE,
@@ -64,7 +66,7 @@ public class ObservationFragment extends Fragment {
             public void onClick(View v) {
                 driver = new SBPDriverTCP(obs_address.getText().toString(), 2000);
                 handler = new SBPHandler(driver);
-                handler.add_callback(OBS_MESSAGE_LIST, new SBPCallback() {
+                handler.addCallback(Arrays.asList(OBS_MESSAGE_LIST), new SBPCallback() {
                     @Override
                     public void receiveCallback(SBPMessage msg) {
                         if (piksiHandler == null) {
@@ -87,7 +89,7 @@ public class ObservationFragment extends Fragment {
 
     public void connectPiksi(SBPHandler handler_) {
         piksiHandler = handler_;
-        piksiHandler.add_callback(OBS_MESSAGE_LIST, new SBPCallback() {
+        piksiHandler.addCallback(Arrays.asList(OBS_MESSAGE_LIST), new SBPCallback() {
             @Override
             public void receiveCallback(SBPMessage msg) {
                 if (handler != null)
@@ -96,6 +98,7 @@ public class ObservationFragment extends Fragment {
                     } catch (IOException e) {
                         Log.e(TAG, "Failed to send observation to network: " + e.toString());
                         e.printStackTrace();
+                        handler = null;
                     }
             }
         });

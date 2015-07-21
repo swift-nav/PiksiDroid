@@ -47,7 +47,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback{
 
 	public void fixFragment(SBPHandler handler) {
 		this.piksiHandler = handler;
-		piksiHandler.add_callback(MsgPosLLH.TYPE, llhCallback);
+		piksiHandler.addCallback(MsgPosLLH.TYPE, llhCallback);
 	}
 
 	@Override
@@ -61,18 +61,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback{
 
 	public SBPCallback llhCallback = new SBPCallback() {
 		@Override
-		public void receiveCallback(SBPMessage msg) {
-			MsgPosLLH posLLH = null;
-			try {
-				posLLH = new MsgPosLLH(msg);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			final double lat = posLLH.lat;
-			final double lon = posLLH.lon;
+		public void receiveCallback(SBPMessage msg_) {
+			MsgPosLLH msg = (MsgPosLLH)msg_;
 
 			synchronized (allPiksiPoints) {
-				allPiksiPoints.add(new PiksiPoint(lat, lon));
+				allPiksiPoints.add(new PiksiPoint(msg.lat, msg.lon));
 			}
 			getActivity().runOnUiThread(new Runnable() {
 				@Override
