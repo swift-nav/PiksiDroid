@@ -21,16 +21,11 @@ import com.swiftnav.sbp.SBPMessage;
 
 import java.util.LinkedList;
 
-
-/**
- * A simple {@link Fragment} subclass.
- */
-public class MapFragment extends Fragment implements OnMapReadyCallback{
-
+public class MapFragment extends Fragment implements OnMapReadyCallback {
 	View view;
 	SBPHandler piksiHandler;
 
-	LinkedList<PiksiPoint> allPiksiPoints = new LinkedList<>();
+	LinkedList<LatLng> allPiksiPoints = new LinkedList<>();
 	LinkedList<Polyline> allPiksiPolylines = new LinkedList<>();
 
 	public MapFragment() {
@@ -65,41 +60,45 @@ public class MapFragment extends Fragment implements OnMapReadyCallback{
 			MsgPosLLH msg = (MsgPosLLH)msg_;
 
 			synchronized (allPiksiPoints) {
-				allPiksiPoints.add(new PiksiPoint(msg.lat, msg.lon));
+				allPiksiPoints.add(new LatLng(msg.lat, msg.lon));
 			}
 			getActivity().runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					com.google.android.gms.maps.MapFragment mapFragment = (com.google.android.gms.maps.MapFragment) getChildFragmentManager()
-							.findFragmentById(R.id.gmap_fragment);
-					GoogleMap gMap = mapFragment.getMap();
-					synchronized (allPiksiPoints) {
-						if (allPiksiPoints.size() > 2) {
-							LatLng from = allPiksiPoints.get(allPiksiPoints.size() - 1).getLatLng();
-							LatLng to = allPiksiPoints.get(allPiksiPoints.size() - 2).getLatLng();
-							Polyline line = gMap.addPolyline(
-									new PolylineOptions()
-											.add(from)
-											.add(to).width(2)
-											.color(Color.RED));
-							allPiksiPolylines.add(line);
-							CameraPosition cameraPosition = new CameraPosition.Builder()
-									.target(to)
-									.zoom(18)
-									.build();
-							gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-							if (allPiksiPolylines.size() > Utils.LASTLINES) {
-								Polyline rLine = allPiksiPolylines.get(0);
-								rLine.remove();
-
-								allPiksiPoints.remove(0);
-								allPiksiPoints.remove(1);
-								allPiksiPolylines.remove(0);
-							}
-						}
-					}
-				}
-			});
+											@Override
+											public void run() {
+												updateMap();
+											}
+										});
 		}
 	};
+
+	private void updateMap() {
+		com.google.android.gms.maps.MapFragment mapFragment = (com.google.android.gms.maps.MapFragment) getChildFragmentManager()
+				.findFragmentById(R.id.gmap_fragment);
+		GoogleMap gMap = mapFragment.getMap();
+		synchronized (allPiksiPoints) {
+			if (allPiksiPoints.size() > 2) {
+				LatLng from = allPiksiPoints.get(allPiksiPoints.size() - 1);
+				LatLng to = allPiksiPoints.get(allPiksiPoints.size() - 2);
+				Polyline line = gMap.addPolyline(
+						new PolylineOptions()
+								.add(from)
+								.add(to).width(2)
+								.color(Color.RED));
+				allPiksiPolylines.add(line);
+				CameraPosition cameraPosition = new CameraPosition.Builder()
+						.target(to)
+						.zoom(18)
+						.build();
+				gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+				if (allPiksiPolylines.size() > Utils.LASTLINES) {
+					Polyline rLine = allPiksiPolylines.get(0);
+					rLine.remove();
+
+					allPiksiPoints.remove(0);
+					allPiksiPoints.remove(1);
+					allPiksiPolylines.remove(0);
+				}
+			}
+		}
+	}
 }
