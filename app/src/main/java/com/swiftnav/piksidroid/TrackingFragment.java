@@ -26,8 +26,10 @@ import com.swiftnav.sbp.tracking.TrackingChannelState;
 
 import java.util.ArrayList;
 
-public class TrackingFragment extends Fragment {
+public class TrackingFragment extends Fragment implements PiksiListener {
 	View view;
+	LineChart mLineChart;
+	BarChart mBarChart;
 	ArrayList<ArrayList<Entry>> lineEntries = new ArrayList<>();
 	ArrayList<ArrayList<BarEntry>> barEntries = new ArrayList<>();
 
@@ -46,6 +48,8 @@ public class TrackingFragment extends Fragment {
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 							 Bundle savedInstanceState) {
 		view = inflater.inflate(R.layout.fragment_tracking, container, false);
+		mLineChart = ((LineChart)view.findViewById(R.id.tracking_line_chart));
+		mBarChart = ((BarChart)view.findViewById(R.id.tracking_bar_chart));
 
 		for (int i = 0; i < 100; i++)
 			xValsLine.add("" + i);
@@ -60,7 +64,6 @@ public class TrackingFragment extends Fragment {
 	}
 
 	private void setupLineChart() {
-		LineChart mLineChart = (LineChart) view.findViewById(R.id.tracking_line_chart);
 		Legend mLegend = mLineChart.getLegend();
 		XAxis bottomAxis = mLineChart.getXAxis();
 		YAxis rightAxis = mLineChart.getAxisRight();
@@ -79,7 +82,6 @@ public class TrackingFragment extends Fragment {
 	}
 
 	private void setupBarChart() {
-		BarChart mBarChart = (BarChart)view.findViewById(R.id.tracking_bar_chart);
 		Legend mLegend = mBarChart.getLegend();
 		XAxis bottomAxis = mBarChart.getXAxis();
 		YAxis rightAxis = mBarChart.getAxisRight();
@@ -99,9 +101,27 @@ public class TrackingFragment extends Fragment {
 		rightAxis.setTextColor(Color.WHITE);
 	}
 
-	public void fixFragment(SBPHandler handler) {
-		this.piksiHandler = handler;
-		this.piksiHandler.addCallback(MsgTrackingState.TYPE, trackingCallback);
+	/*
+        public CompoundButton.OnCheckedChangeListener swChange = new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                TrackingFragment mTrack = ((TrackingFragment) getFragmentManager().findFragmentById(R.id.tracking_fragment));
+                if (isChecked) {
+                    mTrack.getView().findViewById(R.id.tracking_line_chart).setVisibility(View.GONE);
+                    mTrack.getView().findViewById(R.id.tracking_bar_chart).setVisibility(View.VISIBLE);
+                }
+                else {
+                    mTrack.getView().findViewById(R.id.tracking_line_chart).setVisibility(View.VISIBLE);
+                    mTrack.getView().findViewById(R.id.tracking_bar_chart).setVisibility(View.GONE);
+                }
+            }
+        };
+    */
+
+	@Override
+	public void piksiConnected(SBPHandler handler) {
+		piksiHandler = handler;
+		piksiHandler.addCallback(MsgTrackingState.TYPE, trackingCallback);
 	}
 
 	public SBPCallback trackingCallback = new SBPCallback() {
@@ -173,9 +193,6 @@ public class TrackingFragment extends Fragment {
 
 						LineData lineData = new LineData(xValsLine, lineDataSets);
 						BarData barData = new BarData(xValsBar, barDataSets);
-						LineChart mLineChart = ((LineChart)view.findViewById(R.id.tracking_line_chart));
-						BarChart mBarChart = ((BarChart)view.findViewById(R.id.tracking_bar_chart));
-
 						try {
 							mLineChart.setData(lineData);
 							mBarChart.setData(barData);

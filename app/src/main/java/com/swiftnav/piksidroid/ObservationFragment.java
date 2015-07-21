@@ -30,7 +30,7 @@ import java.util.Arrays;
  */
 public class ObservationFragment extends Fragment {
     static final String TAG = "ObservationFragment";
-    static final Integer[] OBS_MESSAGE_LIST = {
+    static final int[] OBS_MESSAGE_LIST = {
             MsgBasePos.TYPE,
             MsgObs.TYPE,
             MsgObsDepA.TYPE,
@@ -66,7 +66,7 @@ public class ObservationFragment extends Fragment {
             public void onClick(View v) {
                 driver = new SBPDriverTCP(obs_address.getText().toString(), 2000);
                 handler = new SBPHandler(driver);
-                handler.addCallback(Arrays.asList(OBS_MESSAGE_LIST), new SBPCallback() {
+                handler.addCallbackMulti(OBS_MESSAGE_LIST, new SBPCallback() {
                     @Override
                     public void receiveCallback(SBPMessage msg) {
                         if (piksiHandler == null) {
@@ -89,7 +89,7 @@ public class ObservationFragment extends Fragment {
 
     public void connectPiksi(SBPHandler handler_) {
         piksiHandler = handler_;
-        piksiHandler.addCallback(Arrays.asList(OBS_MESSAGE_LIST), new SBPCallback() {
+        piksiHandler.addCallbackMulti(OBS_MESSAGE_LIST, new SBPCallback() {
             @Override
             public void receiveCallback(SBPMessage msg) {
                 if (handler != null)

@@ -13,6 +13,11 @@
 
 package com.swiftnav.piksidroid;
 
+import android.app.ActionBar;
+import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -23,13 +28,9 @@ import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
-import android.widget.CompoundButton;
-import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.Switch;
-import android.widget.TabHost;
 
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.loggers.JSONLogger;
@@ -45,6 +46,13 @@ public class MainActivity extends FragmentActivity {
 	String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
 	SBPHandler piksiHandler;
 	SBPDriverJ2XX piksiDriver;
+	private static final String TAG_CONSOLE = "console";
+	private static final String TAG_TRACKING = "tracking";
+	private static final String TAG_MAP = "map";
+	private static final String TAG_BASELINE = "baseline";
+	private static final String[] LISTENER_TAGS = {
+			TAG_CONSOLE, TAG_TRACKING, TAG_MAP, TAG_BASELINE
+	};
 
 	@Override
 	protected void onStart() {
@@ -70,14 +78,19 @@ public class MainActivity extends FragmentActivity {
 
 		for (UsbDevice device : deviceList.values()) {
 			if ((device.getVendorId() == Utils.PIKSI_VID) && (device.getProductId() == Utils.PIKSI_PID))
-				if (!mUsbManager.hasPermission(device)){
+				if (!mUsbManager.hasPermission(device)) {
 					mUsbManager.requestPermission(device, mPermissionIntent);
-				}
-				else {
-					((EditText) findViewById(R.id.console)).setText("");
+				} else {
 					piksiConnected(device);
 				}
 		}
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.menu_main, menu);
+		return super.onCreateOptionsMenu(menu);
 	}
 
 	@Override
@@ -110,16 +123,12 @@ public class MainActivity extends FragmentActivity {
 			Log.e(TAG, "Error opening JSON log file: " + e.toString());
 		}
 
-		((ConsoleFragment) getFragmentManager().findFragmentById(R.id.console_fragment))
-				.fixFragment(piksiHandler);
-		((TrackingFragment) getFragmentManager().findFragmentById(R.id.tracking_fragment))
-				.fixFragment(piksiHandler);
-		((MapFragment) getFragmentManager().findFragmentById(R.id.map_fragment))
-				.fixFragment(piksiHandler);
-		((ObservationFragment) getFragmentManager().findFragmentById(R.id.observation_fragment))
-				.connectPiksi(piksiHandler);
-		((RtkFragment) getFragmentManager().findFragmentById(R.id.rtk_fragment))
-				.fixFragment(piksiHandler);
+		FragmentManager fm = getFragmentManager();
+		for (String tag : LISTENER_TAGS) {
+			PiksiListener l = (PiksiListener) fm.findFragmentByTag(tag);
+			if (l != null)
+				l.piksiConnected(piksiHandler);
+		}
 
 		Log.d(TAG, "All ready to go...");
 
@@ -133,7 +142,6 @@ public class MainActivity extends FragmentActivity {
 				UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 				if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
 					if (device != null) {
-						((EditText) findViewById(R.id.console)).setText("");
 						piksiConnected(device);
 					}
 				} else {
@@ -154,7 +162,7 @@ public class MainActivity extends FragmentActivity {
 						piksiHandler.stop();
 						piksiDriver.close();
 						piksiDriver = null;
-						((EditText) findViewById(R.id.console)).setText("Piksi not connected!");
+						//((EditText) findViewById(R.id.console)).setText("Piksi not connected!");
 					}
 				}
 			}
@@ -162,96 +170,81 @@ public class MainActivity extends FragmentActivity {
 	};
 
 	private void setupUI() {
-		TabHost tabHost = (TabHost) findViewById(R.id.tabHost);
-		tabHost.setup();
+		ActionBar actionBar = getActionBar();
+		actionBar.setLogo(R.mipmap.ic_launcher);
+		actionBar.setDisplayUseLogoEnabled(true);
+		actionBar.setDisplayShowTitleEnabled(false);
+		actionBar.setDisplayShowHomeEnabled(true);
+		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+		actionBar.setDisplayShowTitleEnabled(false);
 
-		TabHost.TabSpec tabSpec = tabHost.newTabSpec("Piksi");
-		tabSpec.setContent(R.id.piksi);
-		tabSpec.setIndicator("Piksi");
-		tabHost.addTab(tabSpec);
+		ActionBar.Tab tab = actionBar.newTab()
+				.setText("Console")
+				.setTabListener(new TabListener<>(
+						this, TAG_CONSOLE, ConsoleFragment.class));
+		actionBar.addTab(tab);
 
-		tabSpec = tabHost.newTabSpec("Tracking");
-		tabSpec.setContent(R.id.tracking);
-		tabSpec.setIndicator("Tracking");
-		tabHost.addTab(tabSpec);
+		tab = actionBar.newTab()
+				.setText("Tracking")
+				.setTabListener(new TabListener<>(
+						this, TAG_TRACKING, TrackingFragment.class));
+		actionBar.addTab(tab);
 
-		tabSpec = tabHost.newTabSpec("Map");
-		tabSpec.setContent(R.id.map);
-		tabSpec.setIndicator("Map");
-		tabHost.addTab(tabSpec);
+		tab = actionBar.newTab()
+				.setText("Map")
+				.setTabListener(new TabListener<>(
+						this, TAG_MAP, MapFragment.class));
+		actionBar.addTab(tab);
 
-		tabSpec = tabHost.newTabSpec("Observation");
-		tabSpec.setContent(R.id.observation);
-		tabSpec.setIndicator("Observation");
-		tabHost.addTab(tabSpec);
-
-		tabSpec = tabHost.newTabSpec("RTK");
-		tabSpec.setContent(R.id.rtk);
-		tabSpec.setIndicator("RTK");
-		tabHost.addTab(tabSpec);
-
-		tabHost.setOnTabChangedListener(tabChanger);
-
-		((EditText) findViewById(R.id.console)).setText("Piksi not connected!");
-		((EditText) findViewById(R.id.console)).setTextIsSelectable(false);
-		findViewById(R.id.console).setClickable(false);
-
-		findViewById(R.id.scrollView).setClickable(false);
-		findViewById(R.id.scrollView).setFocusable(false);
-		findViewById(R.id.scrollView).setOnTouchListener(null);
-		findViewById(R.id.scrollView).setPressed(false);
-
-		com.swiftnav.piksidroid.MapFragment mFrag = ((com.swiftnav.piksidroid.MapFragment) getFragmentManager().findFragmentById(R.id.map_fragment));
-		com.google.android.gms.maps.MapFragment mGFrag = (com.google.android.gms.maps.MapFragment)mFrag.getChildFragmentManager().findFragmentById(R.id.gmap_fragment);
-		mGFrag.getMapAsync(mFrag);
-
+		tab = actionBar.newTab()
+				.setText("Baseline")
+				.setTabListener(new TabListener<>(
+						this, TAG_BASELINE, RtkFragment.class));
+		actionBar.addTab(tab);
 
 		View decorView = getWindow().getDecorView();
 		int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
 		decorView.setSystemUiVisibility(uiOptions);
 	}
 
-	public TabHost.OnTabChangeListener tabChanger = new TabHost.OnTabChangeListener() {
-		@Override
-		public void onTabChanged(String tabId) {
-			TrackingFragment mTrack = ((TrackingFragment) getFragmentManager().findFragmentById(R.id.tracking_fragment));
-			if (tabId == "Tracking") {
-				LinearLayout l = ((LinearLayout)findViewById(R.id.tabItemsLayout));
-				Switch barChartSwitch = new Switch(getApplicationContext());
+	class TabListener<T extends Fragment> implements ActionBar.TabListener {
+		private Fragment mFragment;
+		private final Activity mActivity;
+		private final String mTag;
+		private final Class<T> mClass;
 
-				barChartSwitch.setText("Bar Chart");
-				barChartSwitch.setEnabled(true);
-				RelativeLayout.LayoutParams params  = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-				barChartSwitch.setLayoutParams(params);
-				barChartSwitch.setOnCheckedChangeListener(swChange);
+		public TabListener(Activity activity, String tag, Class<T> clz) {
+			mActivity = activity;
+			mTag = tag;
+			mClass = clz;
+		}
 
-				l.addView(barChartSwitch);
+		public void onTabSelected(ActionBar.Tab tab, FragmentTransaction ft) {
+			// Check if the fragment is already initialized
+			if (mFragment == null)
+				mFragment = getFragmentManager().findFragmentByTag(mTag);
 
-				mTrack.getView().findViewById(R.id.tracking_line_chart).setVisibility(View.VISIBLE);
-				mTrack.getView().findViewById(R.id.tracking_bar_chart).setVisibility(View.GONE);
-			}
-			else {
-				LinearLayout l = ((LinearLayout)findViewById(R.id.tabItemsLayout));
-				if (l.getChildCount() > 1)
-					l.removeViewAt(1);
-				mTrack.getView().findViewById(R.id.tracking_line_chart).setVisibility(View.GONE);
-				mTrack.getView().findViewById(R.id.tracking_bar_chart).setVisibility(View.VISIBLE);
+			if (mFragment == null) {
+				// If not, instantiate and add it to the activity
+				mFragment = Fragment.instantiate(mActivity, mClass.getName());
+				ft.add(android.R.id.tabcontent, mFragment, mTag);
+				if (piksiHandler != null)
+					((PiksiListener)mFragment).piksiConnected(piksiHandler);
+			} else {
+				// If it exists, simply attach it in order to show it
+				ft.attach(mFragment);
 			}
 		}
-	};
 
-	public CompoundButton.OnCheckedChangeListener swChange = new CompoundButton.OnCheckedChangeListener() {
-		@Override
-		public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-			TrackingFragment mTrack = ((TrackingFragment) getFragmentManager().findFragmentById(R.id.tracking_fragment));
-			if (isChecked) {
-				mTrack.getView().findViewById(R.id.tracking_line_chart).setVisibility(View.GONE);
-				mTrack.getView().findViewById(R.id.tracking_bar_chart).setVisibility(View.VISIBLE);
-			}
-			else {
-				mTrack.getView().findViewById(R.id.tracking_line_chart).setVisibility(View.VISIBLE);
-				mTrack.getView().findViewById(R.id.tracking_bar_chart).setVisibility(View.GONE);
+		public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction ft) {
+			if (mFragment != null) {
+				// Detach the fragment, because another one is being attached
+				ft.detach(mFragment);
 			}
 		}
-	};
+
+		public void onTabReselected(ActionBar.Tab tab, FragmentTransaction ft) {
+			// User selected the already selected tab. Usually do nothing.
+		}
+	}
 }

@@ -1,6 +1,5 @@
 package com.swiftnav.piksidroid;
 
-
 import android.os.Bundle;
 import android.app.Fragment;
 import android.view.LayoutInflater;
@@ -11,53 +10,57 @@ import android.widget.ScrollView;
 
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
-import com.swiftnav.sbp.logging.MsgPrint;
+import com.swiftnav.sbp.logging.MsgLog;
 import com.swiftnav.sbp.SBPMessage;
 
-
-/**
- * A simple {@link Fragment} subclass.
- */
-public class ConsoleFragment extends Fragment {
-
+public class ConsoleFragment extends Fragment implements PiksiListener {
 	View view;
 	SBPHandler piksiHandler;
+	EditText mConsole;
+	ScrollView mScrollView;
 
-	public ConsoleFragment() {
-		// Required empty public constructor
-	}
-
+	public ConsoleFragment() {}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 							 Bundle savedInstanceState) {
-		// Inflate the layout for this fragment
 		view = inflater.inflate(R.layout.fragment_console, container, false);
+		mConsole = ((EditText) view.findViewById(R.id.console));
+		if (piksiHandler == null)
+			mConsole.setText("Piksi not connected!");
+		mConsole.setTextIsSelectable(false);
+		mConsole.setClickable(false);
+
+		mScrollView = (ScrollView)view.findViewById(R.id.scrollView);
+		mScrollView.setClickable(false);
+		mScrollView.setFocusable(false);
+		mScrollView.setOnTouchListener(null);
+		mScrollView.setPressed(false);
+
 		return view;
 	}
 
-	public void fixFragment(SBPHandler handler) {
-		this.piksiHandler = handler;
-		piksiHandler.addCallback(MsgPrint.TYPE, printCallback);
+	@Override
+	public void piksiConnected(SBPHandler handler) {
+		mConsole.setText("");
+		piksiHandler = handler;
+		piksiHandler.addCallback(MsgLog.TYPE, printCallback);
 	}
 
 	public SBPCallback printCallback = new SBPCallback() {
 		@Override
 		public void receiveCallback(SBPMessage msg) {
-			final MsgPrint message = (MsgPrint)msg;
+			final MsgLog message = (MsgLog)msg;
 			getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					EditText console = (EditText) getActivity().findViewById(R.id.console);
-					final ScrollView sv = (ScrollView) getActivity().findViewById(R.id.scrollView);
-					if (console.getLineCount() > 100)
-						console.setText("");
-					console.append(message.text);
-					final EditText c = console;
-					sv.post(new Runnable() {
+					if (mConsole.getLineCount() > 100)
+						mConsole.setText("");
+					mConsole.append(message.text);
+					mScrollView.post(new Runnable() {
 						@Override
 						public void run() {
-							sv.smoothScrollTo(0, c.getBottom());
+							mScrollView.smoothScrollTo(0, mConsole.getBottom());
 						}
 					});
 				}

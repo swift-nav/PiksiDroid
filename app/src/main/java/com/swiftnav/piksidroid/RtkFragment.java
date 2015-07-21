@@ -13,7 +13,7 @@ import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.navigation.MsgBaselineNED;
 
-public class RtkFragment extends Fragment {
+public class RtkFragment extends Fragment implements PiksiListener {
 	View view;
 	SBPHandler piksiHandler;
 	TextView n,e,d,tow,n_sats, ff;
@@ -45,7 +45,8 @@ public class RtkFragment extends Fragment {
 		return view;
 	}
 
-	public void fixFragment(SBPHandler handler) {
+	@Override
+	public void piksiConnected(SBPHandler handler) {
 		piksiHandler = handler;
 
 		piksiHandler.addCallback(MsgBaselineNED.TYPE, baselineNEDCallback);

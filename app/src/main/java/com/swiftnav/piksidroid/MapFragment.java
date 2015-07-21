@@ -21,7 +21,8 @@ import com.swiftnav.sbp.SBPMessage;
 
 import java.util.LinkedList;
 
-public class MapFragment extends Fragment implements OnMapReadyCallback {
+public class MapFragment extends com.google.android.gms.maps.MapFragment
+		implements OnMapReadyCallback, PiksiListener {
 	View view;
 	SBPHandler piksiHandler;
 
@@ -29,18 +30,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 	LinkedList<Polyline> allPiksiPolylines = new LinkedList<>();
 
 	public MapFragment() {
+		this.getMapAsync(this);
 		// Required empty public constructor
 	}
 
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-							 Bundle savedInstanceState) {
-		// Inflate the layout for this fragment
-		view = inflater.inflate(R.layout.fragment_map, container, false);
-		return view;
-	}
-
-	public void fixFragment(SBPHandler handler) {
+	public void piksiConnected(SBPHandler handler) {
 		this.piksiHandler = handler;
 		piksiHandler.addCallback(MsgPosLLH.TYPE, llhCallback);
 	}
@@ -72,9 +67,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 	};
 
 	private void updateMap() {
-		com.google.android.gms.maps.MapFragment mapFragment = (com.google.android.gms.maps.MapFragment) getChildFragmentManager()
-				.findFragmentById(R.id.gmap_fragment);
-		GoogleMap gMap = mapFragment.getMap();
+		GoogleMap gMap = this.getMap();
 		synchronized (allPiksiPoints) {
 			if (allPiksiPoints.size() > 2) {
 				LatLng from = allPiksiPoints.get(allPiksiPoints.size() - 1);
