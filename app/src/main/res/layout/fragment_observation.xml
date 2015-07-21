@@ -1,36 +1,29 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             xmlns:tools="http://schemas.android.com/tools"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent"
-             tools:context="com.swiftnav.piksidroid.ObservationFragment">
+<LinearLayout
+    android:id="@+id/observation"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal">
 
-    <LinearLayout
-        android:id="@+id/observation"
-        android:layout_width="match_parent"
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:orientation="horizontal">
+        android:text="@string/server_label"
+        />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:text="Server:"
-            />
+    <EditText
+        android:id="@+id/obs_address"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:inputType="textUri"
+        android:text="@string/server_ip"/>
 
-        <EditText
-            android:id="@+id/obs_address"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="2148.swiftnav.com"
-            android:inputType="textUri"/>
+    <Button
+        android:id="@+id/obs_connect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/server_button"
+        />
 
-        <Button
-            android:id="@+id/obs_connect"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Connect"
-            />
-
-    </LinearLayout>
-
-</FrameLayout>
+</LinearLayout>

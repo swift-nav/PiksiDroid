@@ -1,25 +1,19 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             xmlns:tools="http://schemas.android.com/tools"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent"
-             tools:context="com.swiftnav.piksidroid.TrackingFragment">
+<LinearLayout
+    android:id="@+id/tracking"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <LinearLayout
-        android:id="@+id/tracking"
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/tracking_line_chart"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <com.github.mikephil.charting.charts.BarChart
+        android:id="@+id/tracking_bar_chart"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:visibility="gone"/>
+</LinearLayout>
 
-        <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/tracking_line_chart"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-        <com.github.mikephil.charting.charts.BarChart
-            android:id="@+id/tracking_bar_chart"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone"/>
-    </LinearLayout>
-
-</FrameLayout>
