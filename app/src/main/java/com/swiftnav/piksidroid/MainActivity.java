@@ -31,10 +31,6 @@ import android.widget.RelativeLayout;
 import android.widget.Switch;
 import android.widget.TabHost;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.loggers.JSONLogger;
 
@@ -44,7 +40,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 
-public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MainActivity extends FragmentActivity {
 	String TAG = "PiksiDroid";
 	String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
 	SBPHandler piksiHandler;
@@ -89,15 +85,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 		super.onDestroy();
 		unregisterReceiver(mUsbReceiver);
 		unregisterReceiver(mUsbReceiverDisconnect);
-	}
-
-	@Override
-	public void onMapReady(GoogleMap gMap) {
-		CameraPosition cameraPosition = new CameraPosition.Builder()
-				.target(Utils.SWIFT_COORD)
-				.zoom(18)
-				.build();
-		gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 	}
 
 	private void piksiConnected(UsbDevice usbdev) {
