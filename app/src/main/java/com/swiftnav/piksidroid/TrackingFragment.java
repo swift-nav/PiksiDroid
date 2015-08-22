@@ -87,7 +87,6 @@ public class TrackingFragment extends Fragment {
 
 		mBarChart.setHardwareAccelerationEnabled(true);
 		mBarChart.setDescription("");
-		mBarChart.setDrawValuesForWholeStack(true);
 		mBarChart.setHighlightEnabled(false);
 		mLegend.setPosition(Legend.LegendPosition.BELOW_CHART_CENTER);
 		mLegend.setTextColor(Color.WHITE);
