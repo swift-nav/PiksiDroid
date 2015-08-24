@@ -11,7 +11,7 @@ import android.widget.ScrollView;
 
 import com.swiftnav.sbp.client.SBPCallback;
 import com.swiftnav.sbp.client.SBPHandler;
-import com.swiftnav.sbp.logging.MsgPrint;
+import com.swiftnav.sbp.logging.MsgLog;
 import com.swiftnav.sbp.SBPMessage;
 
 
@@ -38,13 +38,13 @@ public class ConsoleFragment extends Fragment {
 
 	public void fixFragment(SBPHandler handler) {
 		this.piksiHandler = handler;
-		piksiHandler.addCallback(MsgPrint.TYPE, printCallback);
+		piksiHandler.addCallback(MsgLog.TYPE, printCallback);
 	}
 
 	public SBPCallback printCallback = new SBPCallback() {
 		@Override
 		public void receiveCallback(SBPMessage msg) {
-			final MsgPrint message = (MsgPrint)msg;
+			final MsgLog message = (MsgLog)msg;
 			getActivity().runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
