@@ -15,9 +15,9 @@ import com.swiftnav.sbp.client.SBPDriver;
 import com.swiftnav.sbp.client.SBPHandler;
 import com.swiftnav.sbp.drivers.SBPDriverTCP;
 import com.swiftnav.sbp.observation.MsgBasePos;
-import com.swiftnav.sbp.observation.MsgEphemeris;
 import com.swiftnav.sbp.observation.MsgEphemerisDepA;
 import com.swiftnav.sbp.observation.MsgEphemerisDepB;
+import com.swiftnav.sbp.observation.MsgEphemerisKepler;
 import com.swiftnav.sbp.observation.MsgObs;
 import com.swiftnav.sbp.observation.MsgObsDepA;
 
@@ -34,7 +34,7 @@ public class ObservationFragment extends Fragment {
             MsgBasePos.TYPE,
             MsgObs.TYPE,
             MsgObsDepA.TYPE,
-            MsgEphemeris.TYPE,
+            MsgEphemerisKepler.TYPE,
             MsgEphemerisDepA.TYPE,
             MsgEphemerisDepB.TYPE};
 
