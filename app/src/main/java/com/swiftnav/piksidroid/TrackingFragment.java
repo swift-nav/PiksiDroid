@@ -141,7 +141,7 @@ public class TrackingFragment extends Fragment {
 							TrackingChannelState chanState = track.states[i];
 							float cn0 = chanState.cn0;
 							int state = chanState.state;
-							int prn = (int)(chanState.sid & 0x1F);
+							int prn = chanState.sid.prn;
 							barEntries.get(i).clear();
 
 							LineDataSet tmpLineDataSet = lineDataSets.get(i);
@@ -153,7 +153,7 @@ public class TrackingFragment extends Fragment {
 								tmpLineDataSet.setLabel("C-" + i + " PRN " + prn);
 								tmpBarDataSet.setLabel("C-" + i + " PRN " + prn);
 							} else {
-								tmpLineDataSet.setLabel("Chan " + i);;
+								tmpLineDataSet.setLabel("Chan " + i);
 								tmpBarDataSet.setLabel("Chan " + i);
 							}
 
